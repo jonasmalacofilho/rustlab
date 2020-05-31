@@ -63,8 +63,11 @@ impl Request {
 enum Response {
     Ok(String),
     NotFound,
+    InternalServerError,
     TemporaryRedirect(String),
 }
+
+const INTERNAL_SERVER_ERROR: &str = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
 
 impl Response {
     fn to_string(&self) -> Result<String> {
@@ -74,6 +77,7 @@ impl Response {
                 let content = fs::read_to_string("404.html")?;
                 Ok(format!("HTTP/1.1 400 OK\r\n\r\n{}", content))
             }
+            Response::InternalServerError => Ok(String::from(INTERNAL_SERVER_ERROR)),
             Response::TemporaryRedirect(uri) => Ok(format!(
                 "HTTP/1.1 307 Temporary Redirect\r\nLocation: {}\r\n\r\n",
                 uri
@@ -82,8 +86,8 @@ impl Response {
     }
 }
 
-fn handle_stream(mut stream: TcpStream) -> Result<()> {
-    let req = Request::read(stream.try_clone()?)?;
+fn handle_stream(stream: TcpStream) -> Result<Response> {
+    let req = Request::read(stream)?;
     let response = match req {
         Request {
             method: Method::Get,
@@ -103,15 +107,30 @@ fn handle_stream(mut stream: TcpStream) -> Result<()> {
         }
         _ => Response::NotFound,
     };
-    stream.write(&dbg!(response).to_string()?.as_bytes())?;
-    stream.flush()?;
-    Ok(())
+    Ok(response)
+}
+
+fn handle_stream_in_worker(stream: Result<TcpStream>) -> () {
+    let mut stream = stream.unwrap();
+    let response =
+        handle_stream(stream.try_clone().unwrap()).unwrap_or(Response::InternalServerError);
+    // In a real program we would handle `stream.write` and `stream.flush` errors more gracefully,
+    // by retrying and/or logging the issue before returning
+    stream
+        .write(
+            &dbg!(response)
+                .to_string()
+                .unwrap_or(String::from(INTERNAL_SERVER_ERROR))
+                .as_bytes(),
+        )
+        .unwrap();
+    stream.flush().unwrap();
 }
 
 fn main() -> Result<()> {
     let listener = TcpListener::bind("127.0.0.1:7878")?;
     for stream in listener.incoming() {
-        handle_stream(stream?)?;
+        thread::spawn(|| handle_stream_in_worker(stream));
     }
     Ok(())
 }
