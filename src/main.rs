@@ -36,28 +36,26 @@ impl Request {
             .lines()
             .next()
             .ok_or(fallback_error("Empty request"))??;
-        let parts = dbg!(&request_line).split(' ');
-        match parts.take(3).collect::<Vec<_>>().as_slice() {
-            [m, u, v] => {
-                let method = match *m {
-                    "GET" => Method::Get,
-                    "POST" => Method::Post,
-                    _ => return Err(fallback_error("Invalid HTTP method")),
-                };
-                let uri = u.to_string();
-                let version = match *v {
-                    "HTTP/1.1" => Version::Http1_1,
-                    "HTTP/2" => Version::Http2_0,
-                    _ => return Err(fallback_error("Invalid HTTP version")),
-                };
-                Ok(Request {
-                    method,
-                    uri,
-                    version,
-                })
-            }
-            _ => Err(fallback_error("Invalid request")),
-        }
+        let mut parts = dbg!(&request_line).split(' ');
+        let method = match parts.next() {
+            Some("GET") => Method::Get,
+            Some("POST") => Method::Post,
+            _ => return Err(fallback_error("Invalid or missing request method")),
+        };
+        let uri = parts
+            .next()
+            .ok_or(fallback_error("Missing request URI"))?
+            .to_string();
+        let version = match parts.next() {
+            Some("HTTP/1.1") => Version::Http1_1,
+            Some("HTTP/2") => Version::Http2_0,
+            _ => return Err(fallback_error("Invalid or missing HTTP version")),
+        };
+        Ok(Request {
+            method,
+            uri,
+            version,
+        })
     }
 }
 
