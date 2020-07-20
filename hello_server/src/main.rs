@@ -1,6 +1,6 @@
 use std::fs;
 use std::io::prelude::*;
-use std::io::{self, BufReader, Result};
+use std::io::{self, BufReader};
 use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::time::Duration;
@@ -29,7 +29,7 @@ enum Version {
 }
 
 impl Request {
-    fn read(stream: TcpStream) -> Result<Request> {
+    fn read(stream: TcpStream) -> io::Result<Request> {
         // Properly parsing HTTP is outside of the scope of this code
         let reader = BufReader::new(stream);
         let request_line = reader
@@ -70,7 +70,7 @@ enum Response {
 const INTERNAL_SERVER_ERROR: &str = "HTTP/1.1 500 Internal Server Error\r\n\r\n";
 
 impl Response {
-    fn to_string(&self) -> Result<String> {
+    fn to_string(&self) -> io::Result<String> {
         match self {
             Response::Ok(content) => Ok(format!("HTTP/1.1 200 OK\r\n\r\n{}", content)),
             Response::NotFound => {
@@ -86,7 +86,7 @@ impl Response {
     }
 }
 
-fn handle_stream(stream: TcpStream) -> Result<Response> {
+fn handle_stream(stream: TcpStream) -> io::Result<Response> {
     let req = Request::read(stream)?;
     let response = match req {
         Request {
@@ -110,7 +110,7 @@ fn handle_stream(stream: TcpStream) -> Result<Response> {
     Ok(response)
 }
 
-fn handle_stream_in_worker(stream: Result<TcpStream>) -> () {
+fn handle_stream_in_worker(stream: io::Result<TcpStream>) -> () {
     let mut stream = stream.unwrap();
     let response =
         handle_stream(stream.try_clone().unwrap()).unwrap_or(Response::InternalServerError);
@@ -127,10 +127,53 @@ fn handle_stream_in_worker(stream: Result<TcpStream>) -> () {
     stream.flush().unwrap();
 }
 
-fn main() -> Result<()> {
-    let listener = TcpListener::bind("127.0.0.1:7878")?;
-    for stream in listener.incoming() {
-        thread::spawn(|| handle_stream_in_worker(stream));
+mod thread_pool {
+    use std::thread::{self, JoinHandle};
+
+    struct Worker {
+        free: bool,
+        handle: JoinHandle<()>,
     }
-    Ok(())
+
+    pub struct ThreadPool {
+        workers: Vec<Worker>,
+    }
+
+    impl ThreadPool {
+        pub fn new(size: u32) -> ThreadPool {
+            // a manager thread monitors received 
+            ThreadPool { workers: vec![] }
+        }
+
+        /// Submit a `f` job to the pool.
+        ///
+        /// If there is at least one free worker, this function will return `Ok(())` immediately
+        /// and one of the free workers will take and run the job.
+        ///
+        /// If there are no free workers, the job is refused and this function returns an
+        /// `Err(())`.
+        pub fn submit<F>(&self, f: F) -> Result<(), ()>
+        where
+            F: FnOnce() -> (),
+            F: Send + 'static,
+        {
+            for w in &self.workers {
+                if w.free {
+                    // TODO send job
+                    w.handle.thread().unpark();
+                    return Ok({});
+                }
+            }
+            Err(())
+        }
+    }
+}
+
+fn main() {
+    let pool = thread_pool::ThreadPool::new(100);
+    let listener = TcpListener::bind("127.0.0.1:7878").unwrap();
+    for stream in listener.incoming() {
+        pool.submit(|| handle_stream_in_worker(stream))
+            .unwrap_or_else(|_| eprintln!("Cannot handle request"));
+    }
 }
