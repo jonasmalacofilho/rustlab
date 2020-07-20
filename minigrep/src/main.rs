@@ -23,7 +23,7 @@ fn main() {
                 for (line_no, line) in results.iter() {
                     println!("{}:{}:{}", pretty_name, line_no, line);
                 }
-                if results.len() > 0 && exit_with == EXIT_NONE_SELECTED {
+                if !results.is_empty() && exit_with == EXIT_NONE_SELECTED {
                     exit_with = EXIT_OK;
                 }
             }

@@ -13,7 +13,7 @@ impl Config {
     pub fn from_args(args: std::env::Args) -> Option<Config> {
         match args.collect::<Vec<_>>().as_slice() {
             [program_alias, pattern, filenames @ ..] => {
-                let filenames = if filenames.len() > 0 {
+                let filenames = if !filenames.is_empty() {
                     filenames.to_vec()
                 } else {
                     vec![String::from("-")]
@@ -21,7 +21,7 @@ impl Config {
                 let config = Config {
                     program_alias: program_alias.clone(),
                     pattern: pattern.clone(),
-                    filenames: filenames,
+                    filenames
                 };
                 Some(config)
             }
