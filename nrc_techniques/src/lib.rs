@@ -37,4 +37,14 @@ mod test {
 
         assert_eq!(out, vec!["0", "1", "2", "3"]);
     }
+
+    #[test]
+    fn empty_type_errors() {
+        fn wrap_parse(text: &str) -> Result<u32, String> {
+            let num = text.parse::<u32>().map_err(|e| e.to_string())?;
+            Ok(num)
+        }
+
+        assert_eq!(wrap_parse("42"), Ok(42));
+    }
 }
