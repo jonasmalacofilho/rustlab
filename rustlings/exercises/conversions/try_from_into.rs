@@ -2,7 +2,7 @@
 // Basically, this is the same as From. The main difference is that this should return a Result type
 // instead of the target type itself.
 // You can read more about it at https://doc.rust-lang.org/std/convert/trait.TryFrom.html
-use std::convert::{TryInto, TryFrom};
+use std::convert::{TryFrom, TryInto};
 
 #[derive(Debug)]
 struct Color {
@@ -11,7 +11,7 @@ struct Color {
     blue: u8,
 }
 
-// I AM NOT DONE
+// I AM DONE
 
 // Your task is to complete this implementation
 // and return an Ok result of inner type Color.
@@ -26,6 +26,10 @@ struct Color {
 impl TryFrom<(i16, i16, i16)> for Color {
     type Error = String;
     fn try_from(tuple: (i16, i16, i16)) -> Result<Self, Self::Error> {
+        let red = u8::try_from(tuple.0).map_err(|_| "Red channel must be in range 0..=255")?;
+        let green = u8::try_from(tuple.1).map_err(|_| "Green channel must be in range 0..=255")?;
+        let blue = u8::try_from(tuple.2).map_err(|_| "Blue channel must be in range 0..=255")?;
+        Ok(Color { red, green, blue })
     }
 }
 
@@ -33,6 +37,7 @@ impl TryFrom<(i16, i16, i16)> for Color {
 impl TryFrom<[i16; 3]> for Color {
     type Error = String;
     fn try_from(arr: [i16; 3]) -> Result<Self, Self::Error> {
+        Color::try_from((arr[0], arr[1], arr[2]))
     }
 }
 
@@ -40,6 +45,11 @@ impl TryFrom<[i16; 3]> for Color {
 impl TryFrom<&[i16]> for Color {
     type Error = String;
     fn try_from(slice: &[i16]) -> Result<Self, Self::Error> {
+        if slice.len() != 3 {
+            Err("Exactly three channels required".to_string())
+        } else {
+            Color::try_from((slice[0], slice[1], slice[2]))
+        }
     }
 }
 
