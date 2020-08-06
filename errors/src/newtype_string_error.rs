@@ -5,42 +5,49 @@ use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{self, Display};
 
-/// A string that supports the question mark operator.
+/// A string error that supports the question mark operator.
 ///
-/// The newtype pattern is used to allow us to implement the From trait, because of the orphan
-/// rules and this trait not being local.
+/// The newtype pattern is used to allow us to implement the Error and From traits, because of the
+/// orphan rules and neither of these traits being local.
 ///
-/// Unlike `newtype_string_error::StringError`, this does not implement Error.  This has the
-/// advantage or not requiring the expected errors to be marked.  On the other hand, it is even
-/// less suitable for library modules.  That said, `StringError` was not very well suited for that
-/// task either.
+/// Unlike `newtype_string::StringifiedError`, this does implement the Error trait.
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-struct StringifiedError(String);
+struct StringError(String);
 
-impl Display for StringifiedError {
+impl Error for StringError {}
+
+impl Display for StringError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl<T> From<T> for StringifiedError
+impl<T> From<T> for StringError
 where
-    T: Error,
+    T: ExpectedExternalError,
 {
     fn from(err: T) -> Self {
-        StringifiedError(err.to_string())
+        StringError(err.to_string())
     }
 }
 
-fn wrap<F, T, E>(f: F) -> Result<T, StringifiedError>
+/// A marker trait used for automatic conversion of concrete errors.
+///
+/// Without this separate yet identical implementations of `From::from` would be required.
+trait ExpectedExternalError: Error {}
+
+impl ExpectedExternalError for std::num::ParseIntError {}
+impl ExpectedExternalError for std::num::TryFromIntError {}
+
+fn wrap<F, T, E>(f: F) -> Result<T, StringError>
 where
     F: Fn() -> Result<T, E>,
-    E: Error + 'static,
+    E: ExpectedExternalError + 'static,
 {
     Ok(f()?)
 }
 
-fn stringify<T>(res: Result<T, StringifiedError>) -> String
+fn stringify<T>(res: Result<T, StringError>) -> String
 where
     T: Display,
 {
