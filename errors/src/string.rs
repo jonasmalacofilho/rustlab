@@ -1,31 +1,26 @@
-#![allow(dead_code)]
-#![allow(unused_imports)]
-
-use std::convert::TryFrom;
-use std::error::Error;
-use std::fmt::Display;
-
-fn wrap<F, T, E>(f: F) -> Result<T, String>
-where
-    F: Fn() -> Result<T, E>,
-    E: Error + 'static,
-{
-    Ok(f().map_err(|e| e.to_string())?) // annoying
-}
-
-fn stringify<T>(res: Result<T, String>) -> String
-where
-    T: Display,
-{
-    match res {
-        Ok(val) => format!("Success: {}", val),
-        Err(err) => format!("Error: {}", err),
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::convert::TryFrom;
+    use std::error::Error;
+    use std::fmt::Display;
+
+    fn wrap<F, T, E>(f: F) -> Result<T, String>
+    where
+        F: Fn() -> Result<T, E>,
+        E: Error + 'static,
+    {
+        Ok(f().map_err(|e| e.to_string())?) // annoying
+    }
+
+    fn stringify<T>(res: Result<T, String>) -> String
+    where
+        T: Display,
+    {
+        match res {
+            Ok(val) => format!("Success: {}", val),
+            Err(err) => format!("Error: {}", err),
+        }
+    }
 
     #[test]
     fn wrapping_works() {

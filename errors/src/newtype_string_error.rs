@@ -1,7 +1,3 @@
-#![allow(dead_code)]
-#![allow(unused_imports)]
-
-use std::convert::TryFrom;
 use std::error::Error;
 use std::fmt::{self, Display};
 
@@ -11,6 +7,7 @@ use std::fmt::{self, Display};
 /// orphan rules and neither of these traits being local.
 ///
 /// Unlike `newtype_string::StringifiedError`, this does implement the Error trait.
+#[allow(dead_code)]
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
 struct StringError(String);
 
@@ -39,27 +36,28 @@ trait ExpectedExternalError: Error {}
 impl ExpectedExternalError for std::num::ParseIntError {}
 impl ExpectedExternalError for std::num::TryFromIntError {}
 
-fn wrap<F, T, E>(f: F) -> Result<T, StringError>
-where
-    F: Fn() -> Result<T, E>,
-    E: ExpectedExternalError + 'static,
-{
-    Ok(f()?)
-}
-
-fn stringify<T>(res: Result<T, StringError>) -> String
-where
-    T: Display,
-{
-    match res {
-        Ok(val) => format!("Success: {}", val),
-        Err(err) => format!("Error: {}", err),
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::convert::TryFrom;
+
+    fn wrap<F, T, E>(f: F) -> Result<T, StringError>
+    where
+        F: Fn() -> Result<T, E>,
+        E: ExpectedExternalError + 'static,
+    {
+        Ok(f()?)
+    }
+
+    fn stringify<T>(res: Result<T, StringError>) -> String
+    where
+        T: Display,
+    {
+        match res {
+            Ok(val) => format!("Success: {}", val),
+            Err(err) => format!("Error: {}", err),
+        }
+    }
 
     #[test]
     fn wrapping_works() {
