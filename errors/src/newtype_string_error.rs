@@ -1,15 +1,43 @@
+//! A string error that supports the question mark operator.
+//!
+//! # Examples
+//!
+//! Propagating errors is ergonomic, but requires that foreign error types to be preemptively
+//! marked with a special trait.
+//!
+//! ```
+//! # use std::fs;
+//! # use std::io;
+//! # use std::num;
+//! # use std::error::Error;
+//! # use errors::newtype_string_error::{StringError, ExpectedExternalError};
+//! fn open_and_parse_file(file_name: &str) -> Result<i32, StringError> {
+//!     let mut contents = fs::read_to_string(&file_name)?;
+//!     let num: i32 = contents.trim().parse()?;
+//!     Ok(num)
+//! }
+//! ```
+//!
+//! Returning new string errors is also **not** trivial:
+//! ```
+//! assert!(false); // FIXME
+//! ```
+
 use std::error::Error;
 use std::fmt::{self, Display};
 
 /// A string error that supports the question mark operator.
 ///
-/// The newtype pattern is used to allow us to implement the Error and From traits, because of the
-/// orphan rules and neither of these traits being local.
+/// The newtype pattern is used to allow us to implement the [`Error`] and [`From`] traits, because
+/// of the orphan rules and neither of these traits being local.
 ///
-/// Unlike `newtype_string::StringifiedError`, this does implement the Error trait.
-#[allow(dead_code)]
+/// Unlike [`StringifiedError`], this does implement the `Error` trait.
+///
+/// [`Error`]: https://doc.rust-lang.org/stable/std/error/trait.Error.html
+/// [`From`]: https://doc.rust-lang.org/stable/std/convert/trait.From.html
+/// [`StringifiedError`]: ../newtype_string/struct.StringifiedError.html
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-struct StringError(String);
+pub struct StringError(String);
 
 impl Error for StringError {}
 
@@ -21,7 +49,7 @@ impl Display for StringError {
 
 impl<T> From<T> for StringError
 where
-    T: ExpectedExternalError,
+    T: Error + ExpectedExternalError,
 {
     fn from(err: T) -> Self {
         StringError(err.to_string())
@@ -31,10 +59,13 @@ where
 /// A marker trait used for automatic conversion of concrete errors.
 ///
 /// Without this separate yet identical implementations of `From::from` would be required.
-trait ExpectedExternalError: Error {}
+pub trait ExpectedExternalError {}
 
 impl ExpectedExternalError for std::num::ParseIntError {}
 impl ExpectedExternalError for std::num::TryFromIntError {}
+impl ExpectedExternalError for std::io::Error {}
+impl ExpectedExternalError for String {}
+impl ExpectedExternalError for &str {}
 
 #[cfg(test)]
 mod tests {
@@ -44,7 +75,7 @@ mod tests {
     fn wrap<F, T, E>(f: F) -> Result<T, StringError>
     where
         F: Fn() -> Result<T, E>,
-        E: ExpectedExternalError + 'static,
+        E: Error + ExpectedExternalError + 'static,
     {
         Ok(f()?)
     }

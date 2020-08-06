@@ -1,7 +1,51 @@
+//! Box all errors.
+//!
+//! # Examples
+//!
+//! The `Err` variant holds a `Box` of types that implement `Error`, which makes
+//! propagating errors ergonomic and effortless:
+//!
+//! ```
+//! # use std::fs;
+//! # use std::io;
+//! # use std::num;
+//! # use std::error::Error;
+//! fn open_and_parse_file(file_name: &str) -> Result<i32, Box<dyn Error>> {
+//!     let mut contents = fs::read_to_string(&file_name)?;
+//!     let num: i32 = contents.trim().parse()?;
+//!     Ok(num)
+//! }
+//! ```
+//!
+//! On the other hand, returning new errors is more involved and requires defining proper error
+//! types, which is somewhat incompatible with the use of a crude error handling mechanism like
+//! `Box<dyn Error>`:
+//!
+//! ```
+//! # use std::error::Error;
+//! # use std::fmt;
+//! #[derive(Debug)]
+//! struct SorryDave;
+//!
+//! impl fmt::Display for SorryDave {
+//!     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+//!         write!(f, "I'm sorry Dave.  I'm afraid I can't do that.")
+//!     }
+//! }
+//!
+//! impl Error for SorryDave {}
+//!
+//! fn foo() -> Result<(), Box<dyn Error>> {
+//!     Err(Box::new(SorryDave {}))
+//! }
+//! ```
+
 use std::error::Error;
 
-#[allow(dead_code)]
-type BoxedError = Box<dyn Error>;
+/// A simple box of any type that implements [`Error`].
+///
+/// [`Error`]: https://doc.rust-lang.org/stable/std/error/trait.Error.html
+pub type BoxedError = Box<dyn Error>;
 
 #[cfg(test)]
 mod tests {

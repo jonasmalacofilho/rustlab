@@ -1,18 +1,44 @@
+//! A string wrapper that supports the question mark operator.
+//!
+//! # Examples
+//!
+//! Propagating errors is ergonomic and requires no effort.
+//!
+//! ```
+//! # use std::fs;
+//! # use std::io;
+//! # use std::num;
+//! # use std::error::Error;
+//! # use errors::newtype_string::StringifiedError;
+//! fn open_and_parse_file(file_name: &str) -> Result<i32, StringifiedError> {
+//!     let mut contents = fs::read_to_string(&file_name)?;
+//!     let num: i32 = contents.trim().parse()?;
+//!     Ok(num)
+//! }
+//! ```
+//!
+//! Returning new string errors is also **not** trivial:
+//! ```
+//! assert!(false); // FIXME
+//! ```
+
 use std::error::Error;
 use std::fmt::{self, Display};
 
 /// A string that supports the question mark operator.
 ///
-/// The newtype pattern is used to allow us to implement the From trait, because of the orphan
-/// rules and this trait not being local.
+/// The newtype pattern is used to allow us to implement the [`From`] trait, since it is not local
+/// and because of the orphan rules.
 ///
-/// Unlike `newtype_string_error::StringError`, this does not implement Error.  This has the
-/// advantage or not requiring the expected errors to be marked.  On the other hand, it is even
-/// less suitable for library modules.  That said, `StringError` was not very well suited for that
-/// task either.
-#[allow(dead_code)]
+/// Unlike [`StringError`], this does not implement [`Error`].  The advantage is not requiring the
+/// expected errors to be marked; on the other hand, it is even less suitable for library modules.
+/// That said, `StringError` was not very well suited for that task either.
+///
+/// [`Error`]: https://doc.rust-lang.org/stable/std/error/trait.Error.html
+/// [`From`]: https://doc.rust-lang.org/stable/std/convert/trait.From.html
+/// [`StringError`]: ../newtype_string_error/struct.StringError.html
 #[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash, Debug, Default)]
-struct StringifiedError(String);
+pub struct StringifiedError(String);
 
 impl Display for StringifiedError {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {

@@ -1,3 +1,29 @@
+//! Just use plain strings for errors.
+//!
+//! # Examples
+//!
+//! The `Err` variant simply holds a `String`:
+//!
+//! ```
+//! fn foo() -> Result<(), String> {
+//!     Err("I'm sorry, Dave.  I'm afraid I can't do that.".to_string())
+//! }
+//! ```
+//!
+//! Because `String` does not implement `From<Error>`, the question mark operator cannot be used to
+//! propagate foreign errors without first converting them explicitly:
+//!
+//! ```
+//! # use std::fs;
+//! # use std::io;
+//! # use std::num;
+//! fn open_and_parse_file(file_name: &str) -> Result<i32, String> {
+//!     let mut contents = fs::read_to_string(&file_name).map_err(|e| e.to_string())?;
+//!     let num = contents.trim().parse::<i32>().map_err(|e| e.to_string())?;
+//!     Ok(num)
+//! }
+//! ```
+
 #[cfg(test)]
 mod tests {
     use std::convert::TryFrom;
