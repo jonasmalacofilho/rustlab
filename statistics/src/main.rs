@@ -14,7 +14,7 @@ mod stupid_stats {
     pub fn median<'a>(nums: impl Iterator<Item = &'a i32>) -> &'a i32 {
         let mut tmp = nums.map(|n| n).collect::<Vec<_>>();
         tmp.sort();
-        tmp[(tmp.len() - 1)/ 2]
+        tmp[(tmp.len() - 1) / 2]
     }
 
     pub fn mode<'a>(nums: impl Iterator<Item = &'a i32>) -> &'a i32 {

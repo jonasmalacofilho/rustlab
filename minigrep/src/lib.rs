@@ -21,7 +21,7 @@ impl Config {
                 let config = Config {
                     program_alias: program_alias.clone(),
                     pattern: pattern.clone(),
-                    filenames
+                    filenames,
                 };
                 Some(config)
             }

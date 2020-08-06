@@ -141,7 +141,7 @@ mod thread_pool {
 
     impl ThreadPool {
         pub fn new(size: u32) -> ThreadPool {
-            // a manager thread monitors received 
+            // a manager thread monitors received
             ThreadPool { workers: vec![] }
         }
 
