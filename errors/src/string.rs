@@ -1,4 +1,4 @@
-//! Just use plain strings for errors.
+//! Using plain strings for errors is possible, but not ergonomic.
 //!
 //! # Examples
 //!
@@ -6,7 +6,11 @@
 //!
 //! ```
 //! fn foo() -> Result<(), String> {
-//!     Err("I'm sorry, Dave.  I'm afraid I can't do that.".to_string())
+//!     Err("I'm sorry, Dave".to_string())
+//! }
+//!
+//! if let Err(err) = foo() {
+//!     println!("Error: {}", err);
 //! }
 //! ```
 //!
@@ -15,58 +19,25 @@
 //!
 //! ```
 //! # use std::fs;
-//! # use std::io;
-//! # use std::num;
 //! fn open_and_parse_file(file_name: &str) -> Result<i32, String> {
 //!     let mut contents = fs::read_to_string(&file_name).map_err(|e| e.to_string())?;
 //!     let num = contents.trim().parse::<i32>().map_err(|e| e.to_string())?;
 //!     Ok(num)
 //! }
 //! ```
-
-#[cfg(test)]
-mod tests {
-    use std::convert::TryFrom;
-    use std::error::Error;
-    use std::fmt::Display;
-
-    fn wrap<F, T, E>(f: F) -> Result<T, String>
-    where
-        F: Fn() -> Result<T, E>,
-        E: Error + 'static,
-    {
-        Ok(f().map_err(|e| e.to_string())?) // annoying
-    }
-
-    fn stringify<T>(res: Result<T, String>) -> String
-    where
-        T: Display,
-    {
-        match res {
-            Ok(val) => format!("Success: {}", val),
-            Err(err) => format!("Error: {}", err),
-        }
-    }
-
-    #[test]
-    fn wrapping_works() {
-        assert!(wrap(|| "42".parse::<i32>()).is_ok());
-
-        assert!(wrap(|| "fx".parse::<i32>()).is_err());
-        assert!(wrap(|| u8::try_from(-42)).is_err());
-    }
-
-    #[test]
-    fn stringifying_works() {
-        assert_eq!("Success: 42", stringify(wrap(|| "42".parse::<i32>())));
-
-        assert_eq!(
-            "Error: invalid digit found in string",
-            stringify(wrap(|| "fx".parse::<i32>()))
-        );
-        assert_eq!(
-            "Error: out of range integral type conversion attempted",
-            stringify(wrap(|| u8::try_from(-42)))
-        );
-    }
-}
+//!
+//! Additionally, after the conversion errors can no longer be differentiated in a typed manner,
+//! leaving only string operations for this task:
+//!
+//! ```
+//! fn parse_positive_integer(input: &str) -> Result<u128, String> {
+//!     let num = input.parse::<u128>().map_err(|e| e.to_string())?;
+//!     if num == 0 {
+//!         return Err("zero is not a positive integer".into());
+//!     }
+//!     Ok(num)
+//! }
+//!
+//! assert!(matches!(parse_positive_integer("f"), Err(e) if e.starts_with("invalid digit")));
+//! assert!(matches!(parse_positive_integer("0"), Err(e) if e.starts_with("zero is not a")));
+//! ```
