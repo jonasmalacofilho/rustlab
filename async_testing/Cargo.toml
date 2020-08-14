@@ -1,0 +1,9 @@
+[package]
+name = "async_testing"
+version = "0.1.0"
+authors = ["Jonas Malaco <jonas@protocubo.io>"]
+edition = "2018"
+
+[dev-dependencies]
+tokio = { version = "0.2", features = ["macros", "rt-core"] }
+tokio-test = "0.2"
