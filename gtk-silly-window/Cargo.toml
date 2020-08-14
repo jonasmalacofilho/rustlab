@@ -1,0 +1,15 @@
+[package]
+name = "gtk-silly-window"
+version = "0.1.0"
+authors = ["Jonas Malaco <jonas@protocubo.io>"]
+edition = "2018"
+
+[dependencies]
+
+[dependencies.gtk]
+version = "0.9"
+features = ["v3_16"]
+
+[dependencies.gio]
+version = ""
+features = ["v2_44"]
