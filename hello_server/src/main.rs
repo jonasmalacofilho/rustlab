@@ -127,47 +127,7 @@ fn handle_stream_in_worker(stream: io::Result<TcpStream>) -> () {
     stream.flush().unwrap();
 }
 
-mod thread_pool {
-    use std::thread::{self, JoinHandle};
-
-    struct Worker {
-        free: bool,
-        handle: JoinHandle<()>,
-    }
-
-    pub struct ThreadPool {
-        workers: Vec<Worker>,
-    }
-
-    impl ThreadPool {
-        pub fn new(size: u32) -> ThreadPool {
-            // a manager thread monitors received
-            ThreadPool { workers: vec![] }
-        }
-
-        /// Submit a `f` job to the pool.
-        ///
-        /// If there is at least one free worker, this function will return `Ok(())` immediately
-        /// and one of the free workers will take and run the job.
-        ///
-        /// If there are no free workers, the job is refused and this function returns an
-        /// `Err(())`.
-        pub fn submit<F>(&self, f: F) -> Result<(), ()>
-        where
-            F: FnOnce() -> (),
-            F: Send + 'static,
-        {
-            for w in &self.workers {
-                if w.free {
-                    // TODO send job
-                    w.handle.thread().unpark();
-                    return Ok({});
-                }
-            }
-            Err(())
-        }
-    }
-}
+mod thread_pool;
 
 fn main() {
     let pool = thread_pool::ThreadPool::new(100);
