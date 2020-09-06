@@ -24,7 +24,7 @@ mod compare {
     #[test]
     fn is_one_of_many_alternatives() {
         use std::collections::HashSet;
-        let allowlist:HashSet<&str> = vec!["foo", "bar", "baz"].into_iter().collect();
+        let allowlist: HashSet<_> = vec!["foo", "bar", "baz"].into_iter().collect();
 
         assert!(allowlist.contains("bar"));
     }
