@@ -1,0 +1,3 @@
+Manipulating strings (and string slices) is pervasive in the types of programs I write.
+
+Let me get used to the related Rust APIs, starting with those in the standard library.
