@@ -5,3 +5,5 @@ pub mod string;
 // Not very useful error models
 // pub mod newtype_string;
 // pub mod newtype_string_error;
+
+mod testing;
