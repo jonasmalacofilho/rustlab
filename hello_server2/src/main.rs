@@ -6,21 +6,25 @@ use std::net::TcpStream;
 
 use std::fs;
 
-fn main() {
-    let listener = TcpListener::bind("0.0.0.0:7878").unwrap();
+type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
+
+fn main() -> Result<()> {
+    let listener = TcpListener::bind("0.0.0.0:7878")?;
 
     for stream in listener.incoming() {
-        let stream = stream.unwrap();
+        let stream = stream?;
 
-        handle_connection(stream);
+        handle_connection(stream)?;
     }
+
+    Ok(())
 }
 
-fn handle_connection(mut stream: TcpStream) {
-    let mut reader = BufReader::new(stream.try_clone().unwrap());
+fn handle_connection(mut stream: TcpStream) -> Result<()> {
+    let mut reader = BufReader::new(stream.try_clone()?);
 
     let mut request_line = String::new();
-    reader.read_line(&mut request_line).unwrap();
+    reader.read_line(&mut request_line)?;
 
     let pretty_peer = match stream.peer_addr() {
         Ok(a) => a.to_string(),
@@ -34,14 +38,16 @@ fn handle_connection(mut stream: TcpStream) {
         ("HTTP/1.1 404 Not Found\r\n", "404.html")
     };
 
-    let contents = fs::read(contents).unwrap();
+    let contents = fs::read(contents)?;
 
-    stream.write(status_line.as_bytes()).unwrap();
+    stream.write(status_line.as_bytes())?;
 
-    stream.write(format!("Content-Length: {}\r\n\r\n", contents.len()).as_bytes()).unwrap();
-    stream.write(&contents).unwrap();
+    stream.write(format!("Content-Length: {}\r\n\r\n", contents.len()).as_bytes())?;
+    stream.write(&contents)?;
 
-    stream.flush().unwrap();
+    stream.flush()?;
 
     eprintln!("{}", status_line);
+
+    Ok(())
 }
