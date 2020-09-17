@@ -1,3 +1,5 @@
+mod thread_pool;
+
 use std::io::prelude::*;
 use std::io::BufReader;
 
@@ -10,15 +12,18 @@ use std::time::Duration;
 
 use uuid::Uuid;
 
+use thread_pool::ThreadPool;
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> Result<()> {
     let listener = TcpListener::bind("0.0.0.0:7878")?;
+    let pool = ThreadPool::new(4);
 
     for stream in listener.incoming() {
         let stream = stream?;
 
-        thread::spawn(|| {
+        pool.execute(|| {
             let _ = handle_connection(stream);
         });
     }
@@ -38,7 +43,12 @@ fn handle_connection(mut stream: TcpStream) -> Result<()> {
         Ok(a) => a.to_string(),
         Err(_) => String::from("unknown peer"),
     };
-    eprintln!("[{}] < {} from {}", request_id, request_line.trim_end(), pretty_peer);
+    eprintln!(
+        "[{}] < {} from {}",
+        request_id,
+        request_line.trim_end(),
+        pretty_peer
+    );
 
     let hello = "GET / ";
     let sleep = "GET /sleep ";
