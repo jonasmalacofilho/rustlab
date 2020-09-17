@@ -5,6 +5,8 @@ use std::net::TcpListener;
 use std::net::TcpStream;
 
 use std::fs;
+use std::thread;
+use std::time::Duration;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
@@ -32,7 +34,13 @@ fn handle_connection(mut stream: TcpStream) -> Result<()> {
     };
     eprintln!("{} from {}", request_line.trim_end(), pretty_peer);
 
-    let (status_line, contents) = if request_line.starts_with("GET / HTTP") {
+    let hello = "GET / ";
+    let sleep = "GET /sleep ";
+
+    let (status_line, contents) = if request_line.starts_with(hello) {
+        ("HTTP/1.1 200 OK\r\n", "hello.html")
+    } else if request_line.starts_with(sleep) {
+        thread::sleep(Duration::from_secs(3));
         ("HTTP/1.1 200 OK\r\n", "hello.html")
     } else {
         ("HTTP/1.1 404 Not Found\r\n", "404.html")
