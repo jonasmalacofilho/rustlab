@@ -1,6 +1,9 @@
 use std::io::prelude::*;
+use std::io::BufReader;
+
 use std::net::TcpListener;
 use std::net::TcpStream;
+
 use std::fs;
 
 fn main() {
@@ -14,15 +17,17 @@ fn main() {
 }
 
 fn handle_connection(mut stream: TcpStream) {
+    let mut reader = BufReader::new(stream.try_clone().unwrap());
+
     eprintln!(
         "Connection established with {}",
         stream.peer_addr().unwrap()
     );
 
-    let mut buf = [0; 4096];
-    stream.read(&mut buf).unwrap();
+    let mut request = String::new();
+    reader.read_line(&mut request).unwrap();
 
-    eprintln!("{}", String::from_utf8_lossy(&buf[..]));
+    eprintln!("{}", request);
 
     let contents = fs::read("hello.html").unwrap();
 
