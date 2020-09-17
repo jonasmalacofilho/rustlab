@@ -8,6 +8,8 @@ use std::fs;
 use std::thread;
 use std::time::Duration;
 
+use uuid::Uuid;
+
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> Result<()> {
@@ -16,13 +18,17 @@ fn main() -> Result<()> {
     for stream in listener.incoming() {
         let stream = stream?;
 
-        handle_connection(stream)?;
+        thread::spawn(|| {
+            let _ = handle_connection(stream);
+        });
     }
 
     Ok(())
 }
 
 fn handle_connection(mut stream: TcpStream) -> Result<()> {
+    let request_id = Uuid::new_v4();
+
     let mut reader = BufReader::new(stream.try_clone()?);
 
     let mut request_line = String::new();
@@ -32,7 +38,7 @@ fn handle_connection(mut stream: TcpStream) -> Result<()> {
         Ok(a) => a.to_string(),
         Err(_) => String::from("unknown peer"),
     };
-    eprintln!("{} from {}", request_line.trim_end(), pretty_peer);
+    eprintln!("[{}] < {} from {}", request_id, request_line.trim_end(), pretty_peer);
 
     let hello = "GET / ";
     let sleep = "GET /sleep ";
@@ -40,7 +46,7 @@ fn handle_connection(mut stream: TcpStream) -> Result<()> {
     let (status_line, contents) = if request_line.starts_with(hello) {
         ("HTTP/1.1 200 OK\r\n", "hello.html")
     } else if request_line.starts_with(sleep) {
-        thread::sleep(Duration::from_secs(3));
+        thread::sleep(Duration::from_secs(10));
         ("HTTP/1.1 200 OK\r\n", "hello.html")
     } else {
         ("HTTP/1.1 404 Not Found\r\n", "404.html")
@@ -55,7 +61,7 @@ fn handle_connection(mut stream: TcpStream) -> Result<()> {
 
     stream.flush()?;
 
-    eprintln!("{}", status_line);
+    eprintln!("[{}] > {}", request_id, status_line.trim_end());
 
     Ok(())
 }
