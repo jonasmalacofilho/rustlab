@@ -4,6 +4,7 @@ use std::thread::{self, JoinHandle};
 
 type Task = Box<dyn FnOnce() + Send + 'static>;
 
+#[allow(dead_code)]
 pub struct ThreadPool {
     workers: Vec<Worker>,
     sender: Sender<Task>,
@@ -28,6 +29,7 @@ impl ThreadPool {
     }
 }
 
+#[allow(dead_code)]
 struct Worker {
     id: u32,
     thread: JoinHandle<()>,

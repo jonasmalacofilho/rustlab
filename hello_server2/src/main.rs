@@ -64,10 +64,10 @@ fn handle_connection(mut stream: TcpStream) -> Result<()> {
 
     let contents = fs::read(contents)?;
 
-    stream.write(status_line.as_bytes())?;
+    stream.write_all(status_line.as_bytes())?;
 
-    stream.write(format!("Content-Length: {}\r\n\r\n", contents.len()).as_bytes())?;
-    stream.write(&contents)?;
+    stream.write_all(format!("Content-Length: {}\r\n\r\n", contents.len()).as_bytes())?;
+    stream.write_all(&contents)?;
 
     stream.flush()?;
 
