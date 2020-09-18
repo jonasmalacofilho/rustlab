@@ -78,3 +78,45 @@ impl Worker {
         }
     }
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn drop_waits_for_pending_tasks() {
+        use std::time::Duration;
+
+        // create a mutually exclusive flag and immediately take the lock
+        let flag = Arc::new(Mutex::new(false));
+        let guard = flag.lock().unwrap();
+
+        // submit a task that flips that flag to a pool; as the lock is taken, this will not run
+        // for now
+        let pool = ThreadPool::new(4);
+        let flag2 = Arc::clone(&flag);
+        pool.execute(move || {
+            let mut flag = flag2.lock().unwrap();
+            *flag = true;
+        });
+
+        // spawn an accessory thread to drop the pool, because we can't block ourselves
+        let helper = thread::spawn(move || drop(pool));
+
+        // sensibleness check that the flag is false
+        assert!(!*guard);
+
+        // this is not necessary; but, just to be extra safe, wait for a bit: if there was a race,
+        // this would make the wrong behavior more likely (and, thus, make it easier to spot)
+        thread::sleep(Duration::from_millis(100));
+
+        // allow the previous submitted task to take the lock and flip the flag
+        drop(guard);
+
+        // wait for the pool to be dropped
+        helper.join().unwrap();
+
+        // check that the task was able to flip the flag, even though the pool was being drooped
+        assert!(*flag.lock().unwrap());
+    }
+}
