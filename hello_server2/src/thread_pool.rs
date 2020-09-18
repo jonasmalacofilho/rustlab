@@ -39,7 +39,9 @@ impl ThreadPool {
 impl Drop for ThreadPool {
     fn drop(&mut self) {
         for _ in &self.workers {
-            self.sender.send(Message::Terminate).expect("broken channel");
+            self.sender
+                .send(Message::Terminate)
+                .expect("broken channel");
         }
 
         for worker in &mut self.workers {
