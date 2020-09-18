@@ -24,7 +24,7 @@ fn main() -> Result<()> {
         let stream = stream?;
 
         pool.execute(|| {
-            let _ = handle_connection(stream);
+            handle_connection(stream).unwrap();
         });
     }
 
@@ -52,22 +52,28 @@ fn handle_connection(mut stream: TcpStream) -> Result<()> {
 
     let hello = "GET / ";
     let sleep = "GET /sleep ";
+    let panic = "GET /panic ";
 
     let (status_line, contents) = if request_line.starts_with(hello) {
-        ("HTTP/1.1 200 OK\r\n", "hello.html")
+        ("HTTP/1.1 200 OK\r\n", Some("hello.html"))
     } else if request_line.starts_with(sleep) {
         thread::sleep(Duration::from_secs(10));
-        ("HTTP/1.1 200 OK\r\n", "hello.html")
+        ("HTTP/1.1 200 OK\r\n", None)
+    } else if request_line.starts_with(panic) {
+        panic!("Oh no!!!");
     } else {
-        ("HTTP/1.1 404 Not Found\r\n", "404.html")
+        ("HTTP/1.1 404 Not Found\r\n", Some("404.html"))
     };
-
-    let contents = fs::read(contents)?;
 
     stream.write_all(status_line.as_bytes())?;
 
-    stream.write_all(format!("Content-Length: {}\r\n\r\n", contents.len()).as_bytes())?;
-    stream.write_all(&contents)?;
+    if let Some(contents) = contents {
+        let contents = fs::read(contents)?;
+        stream.write_all(format!("Content-Length: {}\r\n\r\n", contents.len()).as_bytes())?;
+        stream.write_all(&contents)?;
+    } else {
+        stream.write_all(b"\r\n\r\n")?;
+    }
 
     stream.flush()?;
 
