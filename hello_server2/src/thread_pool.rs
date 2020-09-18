@@ -32,34 +32,47 @@ impl ThreadPool {
     pub fn execute(&self, task: impl FnOnce() + Send + 'static) {
         let task = Box::new(task);
         let message = Message::Execute(task);
-        self.sender.send(message).unwrap();
+        self.sender.send(message).expect("broken channel");
     }
 }
 
-// impl Drop for ThreadPool {
-//     fn drop(&mut self) {
-//         for worker in &self.workers {
-//         }
-//     }
-// }
+impl Drop for ThreadPool {
+    fn drop(&mut self) {
+        for _ in &self.workers {
+            self.sender.send(Message::Terminate).expect("broken channel");
+        }
+
+        for worker in &mut self.workers {
+            if let Some(thread) = worker.thread.take() {
+                thread.join().unwrap(); // FIXME
+            }
+        }
+    }
+}
 
 #[allow(dead_code)]
 struct Worker {
     id: u32,
-    thread: JoinHandle<()>,
+    thread: Option<JoinHandle<()>>,
 }
 
 impl Worker {
     fn new(id: u32, receiver: Arc<Mutex<Receiver<Message>>>) -> Worker {
-        let thread = thread::spawn(move || loop {
-            let message = receiver.lock().unwrap().recv().unwrap();
+        let thread = thread::Builder::new()
+            .name(format!("worker #{}", id))
+            .spawn(move || loop {
+                let message = receiver.lock().unwrap().recv().expect("broken channel");
 
-            match message {
-                Message::Execute(task) => task(),
-                Message::Terminate => break,
-            }
-        });
+                match message {
+                    Message::Execute(task) => task(),
+                    Message::Terminate => break,
+                }
+            })
+            .expect("could not spawn worker thread");
 
-        Worker { id, thread }
+        Worker {
+            id,
+            thread: Some(thread),
+        }
     }
 }
