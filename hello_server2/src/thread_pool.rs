@@ -4,10 +4,15 @@ use std::thread::{self, JoinHandle};
 
 type Task = Box<dyn FnOnce() + Send + 'static>;
 
+enum Message {
+    Execute(Task),
+    Terminate,
+}
+
 #[allow(dead_code)]
 pub struct ThreadPool {
     workers: Vec<Worker>,
-    sender: Sender<Task>,
+    sender: Sender<Message>,
 }
 
 impl ThreadPool {
@@ -25,9 +30,18 @@ impl ThreadPool {
     }
 
     pub fn execute(&self, task: impl FnOnce() + Send + 'static) {
-        self.sender.send(Box::new(task)).unwrap();
+        let task = Box::new(task);
+        let message = Message::Execute(task);
+        self.sender.send(message).unwrap();
     }
 }
+
+// impl Drop for ThreadPool {
+//     fn drop(&mut self) {
+//         for worker in &self.workers {
+//         }
+//     }
+// }
 
 #[allow(dead_code)]
 struct Worker {
@@ -36,11 +50,14 @@ struct Worker {
 }
 
 impl Worker {
-    fn new(id: u32, receiver: Arc<Mutex<Receiver<Task>>>) -> Worker {
+    fn new(id: u32, receiver: Arc<Mutex<Receiver<Message>>>) -> Worker {
         let thread = thread::spawn(move || loop {
-            let task = receiver.lock().unwrap().recv().unwrap();
+            let message = receiver.lock().unwrap().recv().unwrap();
 
-            task();
+            match message {
+                Message::Execute(task) => task(),
+                Message::Terminate => break,
+            }
         });
 
         Worker { id, thread }
