@@ -1,8 +1,9 @@
+use std::panic::{self, UnwindSafe};
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::sync::{Arc, Mutex};
 use std::thread::{self, JoinHandle};
 
-type Task = Box<dyn FnOnce() + Send + 'static>;
+type Task = Box<dyn FnOnce() + Send + UnwindSafe + 'static>;
 
 enum Message {
     Execute(Task),
@@ -29,7 +30,7 @@ impl ThreadPool {
         ThreadPool { workers, sender }
     }
 
-    pub fn execute(&self, task: impl FnOnce() + Send + 'static) {
+    pub fn execute(&self, task: impl FnOnce() + Send + UnwindSafe + 'static) {
         let task = Box::new(task);
         let message = Message::Execute(task);
         self.sender.send(message).expect("broken channel");
@@ -66,7 +67,14 @@ impl Worker {
                 let message = receiver.lock().unwrap().recv().expect("broken channel");
 
                 match message {
-                    Message::Execute(task) => task(),
+                    Message::Execute(task) => {
+                        if let Err(_) = panic::catch_unwind(task) {
+                            eprintln!(
+                                "panic caught, {} still alive",
+                                thread::current().name().unwrap()
+                            );
+                        }
+                    }
                     Message::Terminate => break,
                 }
             })
@@ -117,6 +125,25 @@ mod test {
         helper.join().unwrap();
 
         // check that the task was able to flip the flag, even though the pool was being drooped
+        assert!(*flag.lock().unwrap());
+    }
+
+    #[test]
+    fn survives_panics() {
+        let flag = Arc::new(Mutex::new(false));
+
+        let pool = ThreadPool::new(1);
+        pool.execute(|| panic!("simulated panic"));
+
+        let flag2 = Arc::clone(&flag);
+        pool.execute(move || {
+            let mut flag = flag2.lock().unwrap();
+            *flag = true;
+        });
+
+        // wait for the pending tasks by dropping the pool
+        drop(pool);
+
         assert!(*flag.lock().unwrap());
     }
 }
