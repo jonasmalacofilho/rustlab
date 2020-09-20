@@ -45,10 +45,8 @@ impl Drop for ThreadPool {
                 .expect("broken channel");
         }
 
-        for worker in &mut self.workers {
-            if let Some(thread) = worker.thread.take() {
-                thread.join().unwrap(); // FIXME
-            }
+        for Worker { thread, .. } in self.workers.drain(..) {
+            thread.join().unwrap(); // FIXME
         }
     }
 }
@@ -56,7 +54,7 @@ impl Drop for ThreadPool {
 #[allow(dead_code)]
 struct Worker {
     id: u32,
-    thread: Option<JoinHandle<()>>,
+    thread: JoinHandle<()>,
 }
 
 impl Worker {
@@ -80,10 +78,7 @@ impl Worker {
             })
             .expect("could not spawn worker thread");
 
-        Worker {
-            id,
-            thread: Some(thread),
-        }
+        Worker { id, thread }
     }
 }
 
