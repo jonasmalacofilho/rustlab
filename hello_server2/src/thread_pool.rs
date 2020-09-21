@@ -66,7 +66,9 @@ impl Worker {
 
                 match message {
                     Message::Execute(task) => {
-                        if let Err(_) = panic::catch_unwind(task) {
+                        let outcome = panic::catch_unwind(task);
+
+                        if outcome.is_err() {
                             eprintln!(
                                 "panic caught, {} still alive",
                                 thread::current().name().unwrap()
