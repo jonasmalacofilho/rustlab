@@ -31,7 +31,11 @@ fn main() -> Result<()> {
         let listener = {
             let alive = Arc::clone(&alive);
 
-            thread::spawn(move || listen(bind_addr, alive).unwrap()) // FIXME should terminate
+            thread::spawn(move || {
+                if std::panic::catch_unwind(move || listen(bind_addr, alive).unwrap()).is_err() {
+                    std::process::abort();
+                }
+            })
         };
 
         let term_signals = [
@@ -57,7 +61,7 @@ fn main() -> Result<()> {
         let _ = TcpStream::connect(bind_addr);
 
         eprintln!("will try to wait for any in-progress requests to terminate");
-        listener.join()?;
+        listener.join().expect("listener had panicked");
     }
 
     eprintln!("goodbye and thanks for all the fish");
