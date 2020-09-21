@@ -3,7 +3,7 @@ mod thread_pool;
 use std::io::prelude::*;
 use std::io::BufReader;
 
-use std::net::{TcpListener, TcpStream, ToSocketAddrs};
+use std::net::{TcpListener, TcpStream};
 
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
@@ -29,9 +29,13 @@ fn main() -> Result<()> {
         let alive = Arc::new(AtomicBool::new(true));
 
         let listener = {
+            let listener = TcpListener::bind(bind_addr)?;
+
+            let pool = ThreadPool::new(4);
+
             let alive = Arc::clone(&alive);
 
-            thread::spawn(move || listen(bind_addr, alive).unwrap()) // FIXME should terminate
+            thread::spawn(move || listen(listener, pool, alive))
         };
 
         let term_signals = [
@@ -57,30 +61,25 @@ fn main() -> Result<()> {
         let _ = TcpStream::connect(bind_addr);
 
         eprintln!("will try to wait for any in-progress requests to terminate");
-        listener.join()?;
+        listener.join().expect("listener had already panicked");
     }
 
     eprintln!("goodbye and thanks for all the fish");
     std::process::exit(exit);
 }
 
-fn listen<A: ToSocketAddrs>(bind_addr: A, alive: Arc<AtomicBool>) -> Result<()> {
-    let listener = TcpListener::bind(bind_addr)?;
-    let pool = ThreadPool::new(4);
-
+fn listen(listener: TcpListener, pool: ThreadPool, alive: Arc<AtomicBool>) {
     for stream in listener.incoming() {
         if !alive.load(Ordering::SeqCst) {
             break;
         }
 
-        let stream = stream?; // FIXME should not terminate
-
-        pool.execute(|| {
-            handle_connection(stream).unwrap();
-        });
+        if let Ok(stream) = stream {
+            pool.execute(|| {
+                handle_connection(stream).unwrap();
+            });
+        }
     }
-
-    Ok(())
 }
 
 fn handle_connection(mut stream: TcpStream) -> Result<()> {
