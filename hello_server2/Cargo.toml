@@ -5,4 +5,5 @@ authors = ["Jonas Malaco <jonas@protocubo.io>"]
 edition = "2018"
 
 [dependencies]
+signal-hook = "0.1"
 uuid = { version = "0.8", features = ["v4"] }

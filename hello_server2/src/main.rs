@@ -3,8 +3,10 @@ mod thread_pool;
 use std::io::prelude::*;
 use std::io::BufReader;
 
-use std::net::TcpListener;
-use std::net::TcpStream;
+use std::net::{TcpListener, TcpStream, ToSocketAddrs};
+
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 
 use std::fs;
 use std::thread;
@@ -12,15 +14,65 @@ use std::time::Duration;
 
 use uuid::Uuid;
 
+use signal_hook::iterator::Signals;
+
 use thread_pool::ThreadPool;
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn main() -> Result<()> {
-    let listener = TcpListener::bind("0.0.0.0:7878")?;
+    let mut exit = 0;
+
+    {
+        let bind_addr = "0.0.0.0:7878";
+
+        let alive = Arc::new(AtomicBool::new(true));
+
+        let listener = {
+            let alive = Arc::clone(&alive);
+
+            thread::spawn(move || listen(bind_addr, alive).unwrap())
+        };
+
+        let term_signals = [
+            signal_hook::SIGTERM,
+            signal_hook::SIGINT,
+            signal_hook::SIGQUIT,
+        ];
+
+        if let Some(signal) = Signals::new(&term_signals)?.forever().next() {
+            eprintln!("received signal to terminate: {}", signal);
+            exit = 128 + signal;
+        }
+
+        // ensure a second signal results in default/immediate termination
+        for signal in &term_signals {
+            signal_hook::cleanup::cleanup_signal(*signal)?;
+        }
+
+        // stop processing new requests
+        alive.store(false, Ordering::SeqCst);
+
+        // send dummy request to unblock (if necessary) the listener thread
+        let _ = TcpStream::connect(bind_addr);
+
+        eprintln!("will try to wait for any in-progress requests to terminate");
+        listener.join().unwrap();
+    }
+
+    eprintln!("goodbye and thanks for all the fish");
+    std::process::exit(exit);
+}
+
+fn listen<A: ToSocketAddrs>(bind_addr: A, alive: Arc<AtomicBool>) -> Result<()> {
+    let listener = TcpListener::bind(bind_addr)?;
     let pool = ThreadPool::new(4);
 
     for stream in listener.incoming() {
+        if !alive.load(Ordering::SeqCst) {
+            break;
+        }
+
         let stream = stream?;
 
         pool.execute(|| {
