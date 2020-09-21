@@ -31,7 +31,7 @@ fn main() -> Result<()> {
         let listener = {
             let alive = Arc::clone(&alive);
 
-            thread::spawn(move || listen(bind_addr, alive).unwrap())
+            thread::spawn(move || listen(bind_addr, alive).unwrap()) // FIXME should terminate
         };
 
         let term_signals = [
@@ -57,7 +57,7 @@ fn main() -> Result<()> {
         let _ = TcpStream::connect(bind_addr);
 
         eprintln!("will try to wait for any in-progress requests to terminate");
-        listener.join().unwrap();
+        listener.join()?;
     }
 
     eprintln!("goodbye and thanks for all the fish");
@@ -73,7 +73,7 @@ fn listen<A: ToSocketAddrs>(bind_addr: A, alive: Arc<AtomicBool>) -> Result<()> 
             break;
         }
 
-        let stream = stream?;
+        let stream = stream?; // FIXME should not terminate
 
         pool.execute(|| {
             handle_connection(stream).unwrap();

@@ -45,8 +45,12 @@ impl Drop for ThreadPool {
                 .expect("broken channel");
         }
 
-        for Worker { thread, .. } in self.workers.drain(..) {
-            thread.join().unwrap(); // FIXME
+        for Worker { id, thread } in self.workers.drain(..) {
+            let panicked = thread.join().is_err();
+
+            if panicked {
+                eprintln!("worker #{} had failed prematurely", id);
+            }
         }
     }
 }
@@ -71,7 +75,7 @@ impl Worker {
                         if outcome.is_err() {
                             eprintln!(
                                 "panic caught, {} still alive",
-                                thread::current().name().unwrap()
+                                thread::current().name().expect("unnamed worker thread")
                             );
                         }
                     }
