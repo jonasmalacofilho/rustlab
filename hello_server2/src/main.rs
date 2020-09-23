@@ -30,9 +30,7 @@ fn main() -> Result<()> {
 
         let listener = {
             let listener = TcpListener::bind(bind_addr)?;
-
             let pool = ThreadPool::new(4);
-
             let alive = Arc::clone(&alive);
 
             thread::spawn(move || listen(listener, pool, alive))
@@ -76,15 +74,17 @@ fn listen(listener: TcpListener, pool: ThreadPool, alive: Arc<AtomicBool>) {
 
         if let Ok(stream) = stream {
             pool.execute(|| {
-                handle_connection(stream).unwrap();
+                let request_id = Uuid::new_v4();
+
+                if let Err(err) = handle_connection(request_id, stream) {
+                    eprintln!("[{}] ! error handling request: {:?}", request_id, err);
+                }
             });
         }
     }
 }
 
-fn handle_connection(mut stream: TcpStream) -> Result<()> {
-    let request_id = Uuid::new_v4();
-
+fn handle_connection(request_id: Uuid, mut stream: TcpStream) -> Result<()> {
     let mut reader = BufReader::new(stream.try_clone()?);
 
     let mut request_line = String::new();

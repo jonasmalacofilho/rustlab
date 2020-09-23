@@ -123,7 +123,7 @@ mod test {
         drop(guard);
 
         // wait for the pool to be dropped
-        helper.join().unwrap();
+        helper.join().expect("drop has panicked");
 
         // check that the task was able to flip the flag, even though the pool was being drooped
         assert!(*flag.lock().unwrap());
