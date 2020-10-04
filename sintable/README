@@ -1,0 +1,5 @@
+- dependency-free program for a few tests
+- answers to what does `let n = 42; let n = n as f32` compile
+- experiment with disassembling rust code on x86_64 and arm, as well as with gdb and objdump
+- experiment with generating musl static binaries
+- experiment with cross-compilation to windows and arm
