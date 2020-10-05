@@ -6,4 +6,4 @@ edition = "2018"
 
 [profile.release]
 debug = true
-lto = "thin"
+lto = "fat"
