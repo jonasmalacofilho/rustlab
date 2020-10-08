@@ -1,0 +1,1 @@
+Minimal artificial Rust functions to study how Rust code is compiled, the calling conventions, how to debug using rust-gdb, etc.
