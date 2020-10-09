@@ -53,6 +53,13 @@ fn main() -> Result<()> {
         }
 
         // stop processing new requests
+        //
+        // note on memory ordering: we need to ensure that the dummy request bellow won't be
+        // received by the listener thread before this store is observable; since we don't know how
+        // that works (but, presumably, may depend on some barrier somewhere), use sequential
+        // consistent (SeqCst) ordering.
+        //
+        // (if it weren't for that we could probably get by with Relaxed ordering).
         alive.store(false, Ordering::SeqCst);
 
         // send dummy request to unblock (if necessary) the listener thread
