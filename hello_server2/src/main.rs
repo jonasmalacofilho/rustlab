@@ -60,6 +60,10 @@ fn main() -> Result<()> {
         // consistent (SeqCst) ordering.
         //
         // (if it weren't for that we could probably get by with Relaxed ordering).
+        //
+        // see also:
+        //     Fedor Pikus.  C++ atomics, from basic to advanced. What do they really do?  CppCon
+        //     2017.  https://www.youtube.com/watch?v=ZQFzMfHIxng
         alive.store(false, Ordering::SeqCst);
 
         // send dummy request to unblock (if necessary) the listener thread
