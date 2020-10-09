@@ -9,4 +9,5 @@ signal-hook = "0.1"
 uuid = { version = "0.8", features = ["v4"] }
 
 [profile.release]
-lto = true
+lto = "thin"
+debug = true
