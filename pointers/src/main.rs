@@ -23,7 +23,6 @@ fn mut_borrows(foo: &mut Foo) {
     // > denotes the pointed-to location.
     // —The dereference operator, The Rust Reference
     (*foo).an_int = 1;
-    // let _: () = *foo; // found struct `Foo`
 
     // automatic dereferencing
     //
@@ -32,7 +31,6 @@ fn mut_borrows(foo: &mut Foo) {
     // > access possible.
     // —Field access expressions, The Rust Reference
     foo.an_int = 2;
-    // let _: () = foo; // found `&mut Foo`
 }
 
 fn takes(mut foo: Foo) {
@@ -40,7 +38,6 @@ fn takes(mut foo: Foo) {
 
     // normal field access
     foo.an_int = 1;
-    // let _: () = foo; // found struct `Foo`
 
     // Foo is not a pointer, so trying to dereference it makes no sense
     //
@@ -62,11 +59,9 @@ fn heap_takes(mut foo: Box<Foo>) {
 
     // - explicit dereferencing
     (*foo).an_int = 1;
-    // let _: () = *foo; // found struct `Foo`
 
     // - automatic dereferencing
     foo.an_int = 2;
-    // let _: () = foo; // found struct `std::boxed::Box<Foo>`
 
     // and it's also possible to change the value stored in the box
     //
