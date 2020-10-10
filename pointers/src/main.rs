@@ -48,8 +48,8 @@ fn takes(mut foo: Foo) {
     // > expression context.
     // —The dereference operator, The Rust Reference
     //
-    // This means that besides the pointer types that are intrinsic to rust, it also works on types
-    // that implement Deref/DerefMut, which are smart pointers (and you can define your own).
+    // This means that besides the pointer types that are intrinsic to rust, deref (only) works on
+    // types that implement Deref/DerefMut; these are smart pointers, and you can define your own.
 }
 
 fn heap_takes(mut foo: Box<Foo>) {
