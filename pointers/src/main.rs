@@ -21,6 +21,8 @@ fn main() {
     mut_borrows(&mut foo);
     takes(foo_clone);
     heap_takes(foo_box);
+
+    assert_eq!(foo.an_int, 3);
 }
 
 fn borrows(foo: &Foo) {
@@ -47,6 +49,22 @@ fn mut_borrows(foo: &mut Foo) {
     // > automatically dereferenced as many times as necessary to make the field access possible.
     // —Field access expressions, The Rust Reference
     foo.an_int = 2;
+
+    // and it's also possible to assigned to value pointed to by the reference
+    //
+    // > If the expression is of type &mut T or *mut T, and is either a local variable, a (nested)
+    // > field of a local variable or is a mutable place expression, then the resulting memory
+    // > location can be assigned to.
+    // —The dereference operator, The Rust Reference
+    *foo = Foo {
+        an_int: 3,
+        another_int: 12,
+        some_string: String::from("Bye"),
+        an_float: 1.67,
+    };
+
+    // note: left-hand-side use of *foo is particularly useful with MutexGuards and in for loops
+    // over &mut v where v is some Vec<_>
 }
 
 fn takes(mut foo: Foo) {
@@ -71,7 +89,7 @@ fn takes(mut foo: Foo) {
 fn heap_takes(mut foo: Box<Foo>) {
     dbg!(&foo);
 
-    // Box does implement Deref/Deref mut, which is why both are possible:
+    // Box does implement Deref/Deref mut, which is why all of these are possible:
 
     // - explicit dereferencing
     (*foo).an_int = 1;
@@ -79,19 +97,11 @@ fn heap_takes(mut foo: Box<Foo>) {
     // - automatic dereferencing
     foo.an_int = 2;
 
-    // and it's also possible to change the value stored in the box
-    //
-    // > If the expression is of type &mut T and *mut T, and [sic] is either a local variable, a
-    // > (nested) field of a local variable or is a **mutable place expression,** then the
-    // > resulting memory location **can be assigned to.**
-    // —The dereference operator, The Rust Reference
+    // - assigning to the interval value
     *foo = Foo {
         an_int: 3,
         another_int: 12,
         some_string: String::from("Bye"),
         an_float: 1.67,
     };
-
-    // note: left-hand-side use of *foo is particularly useful with MutexGuards and in for loops
-    // over &mut v where v is some Vec<_>
 }
