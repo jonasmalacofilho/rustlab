@@ -19,16 +19,15 @@ fn mut_borrows(foo: &mut Foo) {
 
     // explicit dereferencing
     //
-    // > The * (dereference) operator is also a unary prefix operator. When applied to a pointer it
-    // > denotes the pointed-to location.
+    // > The * [...] operator is also a unary prefix operator. When applied to a pointer it denotes
+    // > the pointed-to location.
     // —The dereference operator, The Rust Reference
     (*foo).an_int = 1;
 
     // automatic dereferencing
     //
-    // > [...] if the type of the expression to the left of the dot is a
-    // > pointer, it is automatically dereferenced as many times as necessary to make the field
-    // > access possible.
+    // > [...] if the type of the expression to the left of the dot is a pointer, it is
+    // > automatically dereferenced as many times as necessary to make the field access possible.
     // —Field access expressions, The Rust Reference
     foo.an_int = 2;
 }
