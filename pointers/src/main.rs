@@ -6,6 +6,23 @@ struct Foo {
     an_float: f64,
 }
 
+fn main() {
+    let mut foo = Foo {
+        an_int: 0,
+        another_int: 42,
+        some_string: String::from("Hello"),
+        an_float: 3.14,
+    };
+
+    let foo_clone = foo.clone();
+    let foo_box = Box::new(foo.clone());
+
+    borrows(&foo);
+    mut_borrows(&mut foo);
+    takes(foo_clone);
+    heap_takes(foo_box);
+}
+
 fn borrows(foo: &Foo) {
     dbg!(&foo);
 
@@ -77,21 +94,4 @@ fn heap_takes(mut foo: Box<Foo>) {
 
     // note: left-hand-side use of *foo is particularly useful with MutexGuards and in for loops
     // over &mut v where v is some Vec<_>
-}
-
-fn main() {
-    let mut foo = Foo {
-        an_int: 0,
-        another_int: 42,
-        some_string: String::from("Hello"),
-        an_float: 3.14,
-    };
-
-    let foo_clone = foo.clone();
-    let foo_box = Box::new(foo.clone());
-
-    borrows(&foo);
-    mut_borrows(&mut foo);
-    takes(foo_clone);
-    heap_takes(foo_box);
 }
