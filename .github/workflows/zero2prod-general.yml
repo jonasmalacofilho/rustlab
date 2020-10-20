@@ -1,4 +1,4 @@
-name: Zero2Prod: general actions
+name: Zero2Prod general actions
 
 on: [push, pull_request]
 
