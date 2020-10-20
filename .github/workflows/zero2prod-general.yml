@@ -5,6 +5,10 @@ on: [push, pull_request]
 env:
   CARGO_TERM_COLOR: always
 
+defaults:
+  run:
+    working-directory: zero2prod
+
 jobs:
   test:
     name: Test
@@ -16,10 +20,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
-        working-directory: zero2prod
-        with:
-          command: test
+      - run: cargo test
 
   test-release:
     name: Test --release
@@ -31,11 +32,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/cargo@v1
-        working-directory: zero2prod
-        with:
-          command: test
-          args: --release
+      - run: cargo test --release
 
   fmt:
     name: Rustfmt
@@ -48,11 +45,7 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup component add rustfmt
-      - uses: actions-rs/cargo@v1
-        working-directory: zero2prod
-        with:
-          command: fmt
-          args: --all -- --check
+      - run: cargo fmt --all -- --check
 
   clippy:
     name: Clippy
@@ -65,24 +58,17 @@ jobs:
           toolchain: stable
           override: true
       - run: rustup component add clippy
-      - uses: actions-rs/cargo@v1
-        working-directory: zero2prod
-        with:
-          command: clippy
-          args: -- -D warnings
+      - run: cargo clippy -- -D warnings
 
   coverage:
     name: Code coverage
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
-      - name: Install stable toolchain
-        uses: actions-rs/toolchain@v1
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
         with:
+          profile: minimal
           toolchain: stable
           override: true
-      - uses: actions-rs/tarpaulin@v0.1
-        working-directory: zero2prod
-        with:
-          args: '--ignore-tests'
+      - run: cargo install cargo-tarpaulin
+      - run: cargo tarpaulin --ignore-tests
