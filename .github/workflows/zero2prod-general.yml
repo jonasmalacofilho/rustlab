@@ -5,10 +5,6 @@ on: [push, pull_request]
 env:
   CARGO_TERM_COLOR: always
 
-defaults:
-  run:
-    working-directory: zero2prod
-
 jobs:
   test:
     name: Test
@@ -21,11 +17,12 @@ jobs:
           toolchain: stable
           override: true
       - uses: actions-rs/cargo@v1
+        working-directory: zero2prod
         with:
           command: test
 
   test-release:
-    name: Test
+    name: Test --release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -35,6 +32,7 @@ jobs:
           toolchain: stable
           override: true
       - uses: actions-rs/cargo@v1
+        working-directory: zero2prod
         with:
           command: test
           args: --release
@@ -51,6 +49,7 @@ jobs:
           override: true
       - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
+        working-directory: zero2prod
         with:
           command: fmt
           args: --all -- --check
@@ -67,6 +66,7 @@ jobs:
           override: true
       - run: rustup component add clippy
       - uses: actions-rs/cargo@v1
+        working-directory: zero2prod
         with:
           command: clippy
           args: -- -D warnings
@@ -77,14 +77,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-
       - name: Install stable toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
-
-      - name: Run cargo-tarpaulin
-        uses: actions-rs/tarpaulin@v0.1
+      - uses: actions-rs/tarpaulin@v0.1
+        working-directory: zero2prod
         with:
           args: '--ignore-tests'
