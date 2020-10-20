@@ -70,5 +70,10 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - run: cargo install cargo-tarpaulin
-      - run: cargo tarpaulin --ignore-tests
+      # use action only to install cargo-tarpaulin (precompiled); working-directory
+      # doesn't yet work with uses/actions
+      - uses: actions-rs/cargo-tarpaulin@v0.1
+        with:
+          args: --version
+      - run: cargo tarpaulin --ignore-tests --out Xml
+      - uses: codecov/codecov-action@v1.0.2
