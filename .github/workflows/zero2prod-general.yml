@@ -72,7 +72,7 @@ jobs:
           override: true
       # use action only to install cargo-tarpaulin (precompiled); working-directory
       # doesn't yet work with uses/actions
-      - uses: actions-rs/cargo-tarpaulin@v0.1
+      - uses: actions-rs/tarpaulin@v0.1
         with:
           args: --version
       - run: cargo tarpaulin --ignore-tests --out Xml
