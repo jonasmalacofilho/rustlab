@@ -1,6 +1,9 @@
 name: Zero2Prod general actions
 
-on: [push, pull_request]
+on:
+  push:
+    paths:
+    - 'zero2prod/**'
 
 env:
   CARGO_TERM_COLOR: always
