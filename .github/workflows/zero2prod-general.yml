@@ -77,3 +77,5 @@ jobs:
           args: --version
       - run: cargo tarpaulin --ignore-tests --out Xml
       - uses: codecov/codecov-action@v1.0.2
+        with:
+          token: ${{secrets.CODECOV_TOKEN}}
