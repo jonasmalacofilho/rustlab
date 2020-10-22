@@ -12,10 +12,11 @@ edition = "2018"
 name = "zero2prod"
 
 [dependencies]
+actix-rt = "1.1"
 actix-web = "3.1"
+tokio = "0.2"
 
 [dev-dependencies]
-actix-rt = "1.1"
 reqwest = "0.10"
 
 [profile.release]
