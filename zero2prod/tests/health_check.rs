@@ -13,7 +13,7 @@ fn setup_server() -> Result<SocketAddr, std::io::Error> {
 
 #[actix_rt::test]
 async fn returns_200_with_empty_body() {
-    let server = setup_server().unwrap();
+    let server = setup_server().expect("test setup failed");
 
     let client = reqwest::Client::new();
 
@@ -21,7 +21,7 @@ async fn returns_200_with_empty_body() {
         .get(&format!("http://{}/health_check", server))
         .send()
         .await
-        .unwrap();
+        .expect("request failed");
 
     assert!(response.status().is_success());
     assert_eq!(response.content_length(), Some(0));
