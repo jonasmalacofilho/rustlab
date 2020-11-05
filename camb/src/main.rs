@@ -53,15 +53,15 @@ fn main() {
 
     let total_size = 16 * Gi;
 
+    let mut side_effect = 0_i64;
+
     for size in sizes.iter() {
         let slice = size / std::mem::size_of::<i64>();
         let iterations = total_size / size;
 
-        let mut side_effect = 0;
-
         let reads = time(|| {
             for _ in 0..iterations {
-                side_effect = read(&buffer[0..slice]);
+                side_effect += read(&buffer[0..slice]);
             }
         });
         let reads = total_size as f64 / reads.as_nanos() as f64;
@@ -82,8 +82,10 @@ fn main() {
         };
 
         println!(
-            "{} => {:.1} GiB/s reads, {:.1} GiB/s writes [{}]",
-            hsize, reads, writes, side_effect
+            "{} => {:.1} GiB/s reads, {:.1} GiB/s writes",
+            hsize, reads, writes
         );
     }
+
+    println!("ignore: {}", side_effect);
 }
