@@ -1,0 +1,12 @@
+[package]
+name = "benches"
+version = "0.1.0"
+authors = ["Jonas Malaco <jonas@protocubo.io>"]
+edition = "2018"
+
+[dev-dependencies]
+criterion = "0.3"
+
+[[bench]]
+name = "delayed_drops"
+harness = false
