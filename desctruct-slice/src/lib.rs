@@ -1,6 +1,3 @@
-#![feature(min_const_generics)]
-#![feature(maybe_uninit_write_slice)]
-
 use std::mem::{self, MaybeUninit};
 
 /// Return an array of references from a slice, for irrefutable destructing with `let`.
