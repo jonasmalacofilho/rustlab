@@ -35,9 +35,7 @@ pub fn destructure<T, const N: usize>(slice: &[T]) -> [&T; N] {
         panic!("incorrect number of elements in slice")
     }
 
-    // SAFETY: we are initializing a bunch of MaybeUninits, which do not require initialization
-    // (see documentation of MaybeUninit)
-    let mut ret: [MaybeUninit<&T>; N] = unsafe { MaybeUninit::uninit().assume_init() };
+    let mut ret = [MaybeUninit::<&T>::uninit(); N];
 
     for i in 0..N {
         ret[i] = MaybeUninit::new(&slice[i]);
