@@ -41,16 +41,16 @@ pub fn destructure<T, const N: usize>(slice: &[T]) -> [&T; N] {
         ret[i] = MaybeUninit::new(&slice[i]);
     }
 
-    // double check that the sizes are the same since we cannot use transmute::<_, [&T; N]>(ret)
-    // because it claims that the types do not have a fixed size (possible issue with
-    // min_const_generics?)
     assert_eq!(
         mem::size_of::<[MaybeUninit<&T>; N]>(),
         mem::size_of::<[&T; N]>()
     );
 
-    // SAFETY: everything has been initialized by now, and both src and dst have the same size
-    unsafe { mem::transmute_copy::<_, [&T; N]>(&ret) }
+    // SAFETY:
+    // - [T; N] has the same size as size_of::<T> * N and the same alignment as T
+    // - both MaybeUninit<T> and T have the same layout (size, alignment and ABI)
+    // - all elements have been initialized
+    unsafe { mem::transmute_copy::<[MaybeUninit<&T>; N], [&T; N]>(&ret) }
 }
 
 #[cfg(test)]
