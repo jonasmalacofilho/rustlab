@@ -87,7 +87,10 @@ mod tests {
         let some_data = vec![1, 2, 3];
 
         let [&foo, &bar, &baz] = destructure(&some_data[..]);
-        assert_eq!((foo, bar, baz), (1, 2, 3));
+
+        assert_eq!(foo, 1);
+        assert_eq!(bar, 2);
+        assert_eq!(baz, 3);
     }
 
     #[test]
@@ -100,9 +103,11 @@ mod tests {
 
     #[test]
     fn also_works_with_non_copy_types() {
-        let some_data = vec![String::from("foo"), String::from("bar")];
+        let some_data: Vec<String> = vec![String::from("foo"), String::from("bar")];
 
         let [foo, bar] = destructure(&some_data[..]);
-        assert_eq!((foo.as_str(), bar.as_str()), ("foo", "bar"));
+
+        assert_eq!(foo.as_str(), "foo");
+        assert_eq!(bar.as_str(), "bar");
     }
 }
