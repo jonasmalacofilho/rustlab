@@ -49,7 +49,7 @@ pub fn destructure<T, const N: usize>(slice: &[T]) -> [&T; N] {
     // SAFETY:
     // - [T; N] has the same size as size_of::<T> * N and the same alignment as T
     // - both MaybeUninit<T> and T have the same layout (size, alignment and ABI)
-    // - all elements have been initialized
+    // - all elements have been initialized to valid values
     unsafe { mem::transmute_copy::<[MaybeUninit<&T>; N], [&T; N]>(&ret) }
 }
 
