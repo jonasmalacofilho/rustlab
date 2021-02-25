@@ -1,56 +1,85 @@
-use std::cell::RefCell;
-use std::rc::Rc;
-
-pub struct Vertex {
-    data: i32,
-    adj: Vec<Arc>,
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct VertexId {
+    inner: usize,
 }
 
-pub struct Arc {
-    data: i32,
-    points_to: Rc<RefCell<Vertex>>,
-}
-
-impl Vertex {
-    pub fn new(data: i32) -> Self {
-        Vertex { data, adj: vec![] }
-    }
-
-    pub fn link_to(&mut self, other: Rc<RefCell<Vertex>>, data: i32) {
-        let arc = Arc::new(data, other);
-        self.adj.push(arc);
-    }
-
-    pub fn data(&self) -> i32 {
-        self.data
-    }
-
-    pub fn set_data(&mut self, data: i32) -> i32 {
-        self.data = data;
-        self.data()
-    }
-
-    pub fn adj(&self) -> impl Iterator<Item = &Arc> {
-        self.adj.iter()
+impl VertexId {
+    pub fn new(id: usize) -> Self {
+        VertexId { inner: id }
     }
 }
 
-impl Arc {
-    pub fn new(data: i32, points_to: Rc<RefCell<Vertex>>) -> Self {
-        Arc { data, points_to }
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
+#[repr(transparent)]
+pub struct ArcId {
+    inner: usize,
+}
+
+impl ArcId {
+    pub fn new(id: usize) -> Self {
+        ArcId { inner: id }
+    }
+}
+
+#[derive(Debug)]
+struct Vertex<C> {
+    id: VertexId,
+    parent: Option<(VertexId, C)>,
+    adj: Vec<Arc<C>>,
+}
+
+impl<C> Vertex<C> {
+    fn new(id: VertexId) -> Self {
+        Vertex {
+            id,
+            parent: None,
+            adj: vec![],
+        }
+    }
+}
+
+#[derive(Debug)]
+struct Arc<C> {
+    id: ArcId,
+    cost: C,
+    points_to: VertexId,
+}
+
+impl<C> Arc<C> {
+    fn new(id: ArcId, cost: C, points_to: VertexId) -> Self {
+        Arc {
+            id,
+            cost,
+            points_to,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub struct Graph<C> {
+    vertices: Vec<Vertex<C>>,
+}
+
+impl<C> Graph<C> {
+    pub fn new() -> Self {
+        Graph { vertices: vec![] }
     }
 
-    pub fn data(&self) -> i32 {
-        self.data
+    pub fn add_vertex(&mut self) -> VertexId {
+        let id = VertexId::new(self.vertices.len());
+        self.vertices.push(Vertex::new(id));
+        id
     }
 
-    pub fn set_data(&mut self, data: i32) -> i32 {
-        self.data = data;
-        self.data()
-    }
+    pub fn add_arc(&mut self, from: VertexId, to: VertexId, cost: C) -> ArcId {
+        let _ = &self.vertices[to.inner];
+        let from = &mut self.vertices[from.inner];
 
-    pub fn adj(&self) -> &Rc<RefCell<Vertex>> {
-        &self.points_to
+        let id = ArcId::new(from.adj.len());
+        from.adj.push(Arc::new(id, cost, to));
+
+        id
     }
 }
 
@@ -60,23 +89,23 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let v1 = Rc::new(RefCell::new(Vertex::new(1)));
-        let v2 = Rc::new(RefCell::new(Vertex::new(2)));
+        let mut graph: Graph<i32> = Graph::new();
 
-        assert_eq!(v1.borrow().data(), 1);
-        assert_eq!(v2.borrow().data(), 2);
+        let v1 = graph.add_vertex();
+        let v2 = graph.add_vertex();
+        let v3 = graph.add_vertex();
+        let v4 = graph.add_vertex();
 
-        v1.borrow_mut().link_to(Rc::clone(&v2), 42);
-        v2.borrow_mut().link_to(Rc::clone(&v1), 40);
+        graph.add_arc(v1, v2, 42);
+        graph.add_arc(v1, v3, 69);
+        graph.add_arc(v2, v3, 40);
+        graph.add_arc(v2, v4, 32);
+        graph.add_arc(v3, v4, 20);
 
-        {
-            let v1 = v1.borrow();
-            for arc in v1.adj() {
-                let mut vadj = arc.adj().borrow_mut();
-                vadj.set_data(v1.data() + arc.data());
-            }
-
-            assert_eq!(v2.borrow().data(), 43);
-        }
+        // {
+        //     assert_eq!(v2.parent(), Some((v1.id(), 42)));
+        //     assert_eq!(v3.parent(), Some((v1.id(), 69)));
+        //     assert_eq!(v4.parent(), Some((v2.id(), 74)));
+        // }
     }
 }
