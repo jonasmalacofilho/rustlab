@@ -81,8 +81,8 @@ impl Sieve {
         });
     }
 
-    // As of Rust 1.51, while loops are ~60% faster than using the for statement, and ~20% faster
-    // than using for_each().  This may be partially caused by .step_by() and RangeInclusive.
+    // As of Rust 1.51, while loops are significantly faster than using a for statement or even
+    // for_each().
     #[cfg(feature = "while-loops")]
     fn clear_non_primes(&mut self) {
         // SAFETY: 1 is explicitly allowed
