@@ -1,0 +1,29 @@
+[package]
+name = "prime-sieve"
+version = "0.1.0"
+authors = ["Jonas Malaco <jonas@protocubo.io>"]
+edition = "2018"
+
+[lib]
+
+[[bin]]
+name = "prime-sieve-bench"
+path = "src/main.rs"
+
+[profile.release]
+panic = "abort"
+lto = true
+codegen-units = 1
+
+debug = true
+
+[features]
+default = ["while-loops"]
+
+# implementations
+for-loops = []
+while-loops = []
+for_each = []
+
+# prevent some inlining for later disassembly
+disass = []
