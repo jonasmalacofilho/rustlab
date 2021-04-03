@@ -18,9 +18,13 @@ codegen-units = 1
 debug = true
 
 [features]
-default = ["while-loops"]
+default = ["bit-based", "while-loops"]
 
-# implementations
+# storage options
+bool-based = []
+bit-based = []
+
+# loop options
 for-loops = []
 while-loops = []
 for_each = []

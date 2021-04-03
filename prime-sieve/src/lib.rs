@@ -1,4 +1,10 @@
+#[cfg(feature = "bool-based")]
+type C = bool;
+
+#[cfg(feature = "bit-based")]
 type C = usize;
+
+#[cfg(feature = "bit-based")]
 const CBITS: usize = C::count_ones(C::MAX) as usize;
 
 pub struct Sieve {
@@ -19,10 +25,8 @@ impl Sieve {
         if number < self.upper_limit && number % 2 == 1 {
             // SAFETY: just checked that number is odd and less than upper_limit
             unsafe { self.is_prime_unchecked(number) }
-        } else if number == 2 {
-            true
         } else {
-            false
+            number == 2
         }
     }
 
@@ -31,34 +35,9 @@ impl Sieve {
         !self.is_prime(number)
     }
 
-    #[cfg_attr(feature = "disass", inline(never))]
-    pub fn count_primes(&self) -> usize {
-        // Assumes that extra bits at the end are zeroed/cleared.
-        self.map.iter().map(|x| x.count_ones()).sum::<u32>() as usize + 1
-    }
-
-    #[cfg_attr(feature = "disass", inline(never))]
-    fn new(upper_limit: usize) -> Self {
-        let mut map = vec![C::MAX as C; upper_limit / 2 / CBITS + 1];
-
-        // Zero extra bits at the end, so count_primes can use count_ones.
-        let keep = upper_limit / 2 % CBITS;
-        let keep_mask: C = (1 << keep) - 1;
-
-        let last = map.len() - 1;
-
-        // SAFETY: just computed last from map.len()
-        unsafe { *map.get_unchecked_mut(last) &= keep_mask };
-
-        Sieve {
-            upper_limit,
-            map
-        }
-    }
-
     #[cfg(feature = "for-loops")]
     fn clear_non_primes(&mut self) {
-        // SAFETY: 1 is odd and less than 2 * CBITS
+        // SAFETY: 1 is explicitly allowed
         unsafe { self.clear_prime_unchecked(1) };
 
         let enough = (self.upper_limit as f64).sqrt() as usize;
@@ -79,7 +58,7 @@ impl Sieve {
 
     #[cfg(feature = "for_each")]
     fn clear_non_primes(&mut self) {
-        // SAFETY: 1 is odd and less than 2 * CBITS
+        // SAFETY: 1 is explicitly allowed
         unsafe { self.clear_prime_unchecked(1) };
 
         let enough = (self.upper_limit as f64).sqrt() as usize;
@@ -91,17 +70,20 @@ impl Sieve {
                 return;
             }
 
-            ((factor * factor)..self.upper_limit).step_by(factor * 2).for_each(|mult| {
-                // SAFETY: mult is odd (prime * 3, 5, 7, ...) and less than upper_limit
-                unsafe { self.clear_prime_unchecked(mult) };
-            });
+            ((factor * factor)..self.upper_limit)
+                .step_by(factor * 2)
+                .for_each(|mult| {
+                    // SAFETY: mult is odd (prime * 3, 5, 7, ...) and less than upper_limit
+                    unsafe { self.clear_prime_unchecked(mult) };
+                });
         });
     }
 
     // As of Rust 1.51, while loops are ~60% faster than using the for statement, and ~20% faster
     // than using for_each().  This may be partially caused by .step_by() and RangeInclusive.
-    #[cfg(feature = "while-loops")] fn clear_non_primes(&mut self) {
-        // SAFETY: 1 is odd and less than 2 * CBITS
+    #[cfg(feature = "while-loops")]
+    fn clear_non_primes(&mut self) {
+        // SAFETY: 1 is explicitly allowed
         unsafe { self.clear_prime_unchecked(1) };
 
         let enough = (self.upper_limit as f64).sqrt() as usize;
@@ -122,14 +104,85 @@ impl Sieve {
             factor += 2;
         }
     }
+}
+
+#[cfg(feature = "bool-based")]
+impl Sieve {
+    #[cfg_attr(feature = "disass", inline(never))]
+    pub fn count_primes(&self) -> usize {
+        // Assumes that extra bits at the end are zeroed/cleared.
+        self.map.iter().filter(|&x| *x).count() as usize + 1
+    }
+
+    #[cfg(feature = "bool-based")]
+    #[cfg_attr(feature = "disass", inline(never))]
+    fn new(upper_limit: usize) -> Self {
+        Sieve {
+            upper_limit,
+            map: vec![true; upper_limit / 2],
+        }
+    }
 
     /// # Safety
     ///
-    /// The `number` argument must be odd and less than `self.upper_limit` or `2 * CBITS`.
+    /// The `number` argument must be one or odd and less than `self.upper_limit`.
+    #[cfg(feature = "bool-based")]
     #[cfg_attr(feature = "disass", inline(never))]
     unsafe fn clear_prime_unchecked(&mut self, number: usize) {
         debug_assert!(number % 2 != 0);
-        debug_assert!(number < self.upper_limit || number < 2 * CBITS);
+        debug_assert!(number < self.upper_limit || number == 1);
+        debug_assert!(number / 2 < self.map.len());
+
+        *self.map.get_unchecked_mut(number / 2) = false;
+    }
+
+    /// # Safety
+    ///
+    /// The `number` argument must be odd and less `self.upper_limit`.
+    #[cfg(feature = "bool-based")]
+    #[cfg_attr(feature = "disass", inline(never))]
+    unsafe fn is_prime_unchecked(&self, number: usize) -> bool {
+        debug_assert!(number % 2 != 0);
+        debug_assert!(number < self.upper_limit);
+        debug_assert!(number / 2 < self.map.len());
+
+        *self.map.get_unchecked(number / 2)
+    }
+}
+
+#[cfg(feature = "bit-based")]
+impl Sieve {
+    #[cfg_attr(feature = "disass", inline(never))]
+    pub fn count_primes(&self) -> usize {
+        // Assumes that extra bits at the end are zeroed/cleared.
+        self.map.iter().map(|x| x.count_ones()).sum::<u32>() as usize + 1
+    }
+
+    #[cfg(feature = "bit-based")]
+    #[cfg_attr(feature = "disass", inline(never))]
+    fn new(upper_limit: usize) -> Self {
+        let mut map = vec![C::MAX as C; upper_limit / 2 / CBITS + 1];
+
+        // Zero extra bits at the end, so count_primes can use count_ones.
+        let keep = upper_limit / 2 % CBITS;
+        let keep_mask: C = (1 << keep) - 1;
+
+        let last = map.len() - 1;
+
+        // SAFETY: just computed last from map.len()
+        unsafe { *map.get_unchecked_mut(last) &= keep_mask };
+
+        Sieve { upper_limit, map }
+    }
+
+    /// # Safety
+    ///
+    /// The `number` argument must be one or odd and less than `self.upper_limit`.
+    #[cfg(feature = "bit-based")]
+    #[cfg_attr(feature = "disass", inline(never))]
+    unsafe fn clear_prime_unchecked(&mut self, number: usize) {
+        debug_assert!(number % 2 != 0);
+        debug_assert!(number < self.upper_limit || number == 1);
 
         let number = number / 2;
         let word = number / CBITS;
@@ -139,9 +192,11 @@ impl Sieve {
         *self.map.get_unchecked_mut(word) &= !(1 << bit)
     }
 
+    ///
     /// # Safety
     ///
     /// The `number` argument must be odd and less `self.upper_limit`.
+    #[cfg(feature = "bit-based")]
     #[cfg_attr(feature = "disass", inline(never))]
     unsafe fn is_prime_unchecked(&self, number: usize) -> bool {
         debug_assert!(number % 2 != 0);
