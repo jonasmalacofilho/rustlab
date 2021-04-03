@@ -1,8 +1,10 @@
 #[cfg(feature = "bool-based")]
 type C = bool;
 
+// Best chunk sizes appear to u8 and, in a close second place, usize.  But only tested on
+// Intel/x86-64 (Skylake).
 #[cfg(feature = "bit-based")]
-type C = usize;
+type C = u8;
 
 #[cfg(feature = "bit-based")]
 const CBITS: usize = C::count_ones(C::MAX) as usize;

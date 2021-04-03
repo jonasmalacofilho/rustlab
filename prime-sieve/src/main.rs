@@ -5,7 +5,7 @@ use std::collections::HashMap;
 use std::time::Instant;
 
 fn main() {
-    let period = 5.;
+    let period = 10.;
     let upper_limit: usize = 1_000_000;
 
     let prime_counts = [
