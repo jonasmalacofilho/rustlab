@@ -1,6 +1,7 @@
 use colored::Colorize;
 use serde_json::Value;
 use std::io::{self, Result};
+use structopt::StructOpt;
 
 /// Definitions and utilities for reading liquidctl `--json` output.
 mod lq {
@@ -54,7 +55,7 @@ fn sensors<'a>(statuses: &'a [lq::Status]) -> impl Iterator<Item = Sensor<'a>> {
 }
 
 /// Print all sensors in categories
-fn show_in_sections(statuses: &[lq::Status]) {
+fn show_in_sections(statuses: &[lq::Status], with_unit: &Option<String>) {
     let sections = [
         ("Temperature", Some("°C")),
         ("Fan/pump speed", Some("rpm")),
@@ -64,15 +65,20 @@ fn show_in_sections(statuses: &[lq::Status]) {
         ("Power", Some("W")),
         ("Other", None),
     ];
+    let sectioned: Vec<_> = sections.iter().filter_map(|(_, u)| *u).collect();
 
-    let not_other: Vec<_> = sections.iter().filter_map(|(_, u)| *u).collect();
-    let not_other = &not_other;
+    let mut first_section = true;
+    for (name, sec_unit) in sections.iter() {
+        let sectioned = &sectioned;
 
-    for (i, (name, unit)) in sections.iter().enumerate() {
         let mut sensors = sensors(statuses)
-            .filter(move |sensor| match unit {
-                Some(unit) => &sensor.unit == unit,
-                None => !not_other.contains(&sensor.unit),
+            .filter(move |sensor| match with_unit {
+                Some(with_unit) => &sensor.unit == with_unit,
+                None => true,
+            })
+            .filter(move |sensor| match sec_unit {
+                Some(sec_unit) => &sensor.unit == sec_unit,
+                None => !sectioned.contains(&sensor.unit),
             })
             .peekable();
 
@@ -80,7 +86,9 @@ fn show_in_sections(statuses: &[lq::Status]) {
             continue;
         }
 
-        if i > 0 {
+        if first_section {
+            first_section = false;
+        } else {
             print!("\n");
         }
 
@@ -99,13 +107,51 @@ fn show_in_sections(statuses: &[lq::Status]) {
     }
 }
 
+/// Parse and print JSON sensor data in `stdin` coming from liquidctl.
+#[derive(StructOpt)]
+struct Opt {
+    /// Filter devices on <bus>.
+    #[structopt(long)]
+    bus: Option<String>,
+
+    /// Filter devices on <address>.
+    #[structopt(long)]
+    address: Option<String>,
+
+    /// Filter sensors with <unit>.
+    #[structopt(long)]
+    unit: Option<String>,
+}
+
 fn main() -> Result<()> {
+    let opt = Opt::from_args();
+
     let statuses = lq::read_statuses(io::stdin())?;
 
-    // TODO output only specific devices/keys received as CLI args
+    if statuses.is_empty() {
+        return Ok(());
+    }
 
-    // else just output the most common sections...
-    show_in_sections(&statuses);
+    let statuses: Vec<_> = statuses
+        .into_iter()
+        .filter(|x| {
+            for (exp, val) in &[(&opt.bus, &x.bus), (&opt.address, &x.address)] {
+                if let Some(exp) = exp {
+                    if &exp != val {
+                        return false;
+                    }
+                }
+            }
+            true
+        })
+        .collect();
+
+    if statuses.is_empty() {
+        // nothing to report, but exit with 0 since no devices remained
+        std::process::exit(1);
+    }
+
+    show_in_sections(&statuses, &opt.unit);
 
     Ok(())
 }

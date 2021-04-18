@@ -12,6 +12,7 @@ name = "liquidctl-sensors"
 colored = "2.0"
 serde = { version="1.0", features = ["derive"] }
 serde_json = "1.0"
+structopt = "0.3"
 
 [profile.release]
 codegen-units = 1
