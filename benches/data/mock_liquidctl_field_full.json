@@ -1,0 +1,92 @@
+{
+  "Bus": "hid",
+  "Address": "/dev/hidraw4",
+  "Device": "NZXT Smart Device (V1)",
+  "Status": [
+    {
+      "key": "Fan 1 speed",
+      "value": 1505,
+      "unit": "rpm"
+    },
+    {
+      "key": "Fan 1 voltage",
+      "value": 11.91,
+      "unit": "V"
+    },
+    {
+      "key": "Fan 1 current",
+      "value": 0.02,
+      "unit": "A"
+    },
+    {
+      "key": "Fan 1",
+      "value": "PWM",
+      "unit": ""
+    },
+    {
+      "key": "Fan 2 speed",
+      "value": 1368,
+      "unit": "rpm"
+    },
+    {
+      "key": "Fan 2 voltage",
+      "value": 11.91,
+      "unit": "V"
+    },
+    {
+      "key": "Fan 2 current",
+      "value": 0.02,
+      "unit": "A"
+    },
+    {
+      "key": "Fan 2",
+      "value": "PWM",
+      "unit": ""
+    },
+    {
+      "key": "Fan 3 speed",
+      "value": 1649,
+      "unit": "rpm"
+    },
+    {
+      "key": "Fan 3 voltage",
+      "value": 11.91,
+      "unit": "V"
+    },
+    {
+      "key": "Fan 3 current",
+      "value": 0.03,
+      "unit": "A"
+    },
+    {
+      "key": "Fan 3",
+      "value": "PWM",
+      "unit": ""
+    },
+    {
+      "key": "Firmware version",
+      "value": "1.0.7",
+      "unit": ""
+    },
+    {
+      "key": "LED accessories",
+      "value": 2,
+      "unit": ""
+    },
+    {
+      "key": "LED accessory type",
+      "value": "HUE+ Strip",
+      "unit": ""
+    },
+    {
+      "key": "LED count (total)",
+      "value": 20,
+      "unit": ""
+    },
+    {
+      "key": "Noise level",
+      "value": 63,
+      "unit": "dB"
+    }
+  ]
+}

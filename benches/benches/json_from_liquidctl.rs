@@ -17,6 +17,15 @@ type RawStatus<'a> = Vec<(&'a str, StatusValue<'a>, &'a str)>;
 
 type KeyTupleStatus<'a> = HashMap<&'a str, (StatusValue<'a>, &'a str)>;
 
+#[derive(Deserialize)]
+struct FieldFullStatusItem<'a> {
+    pub key: &'a str,
+    pub value: StatusValue<'a>,
+    pub unit: &'a str,
+}
+
+type FieldFullStatus<'a> = Vec<FieldFullStatusItem<'a>>;
+
 #[derive(Deserialize, Debug, PartialEq)]
 #[serde(untagged)]
 enum StatusValue<'a> {
@@ -81,9 +90,49 @@ fn key_tuple_find_fan_rpms<'a>(data: &str) {
     assert_eq!(fan_speed("Fan 3 speed"), 1634.);
 }
 
+fn field_full_baseline<'a>(data: &str) {
+    let response = serde_json::from_str::<Response<FieldFullStatus>>(data).unwrap();
+
+    assert_eq!(response.Status.len(), 17);
+}
+
+fn field_full_filter_rpms<'a>(data: &str) {
+    let response = serde_json::from_str::<Response<FieldFullStatus>>(data).unwrap();
+
+    assert_eq!(
+        response.Status.iter().filter(|x| x.unit == "rpm").count(),
+        3
+    );
+}
+
+fn field_full_find_fan_rpms<'a>(data: &str) {
+    let response = serde_json::from_str::<Response<FieldFullStatus>>(data).unwrap();
+
+    let fan_speed = |key| match response.Status.iter().find(|x| x.key == key).unwrap().value {
+        StatusValue::Number(speed) => speed,
+        _ => unreachable!(),
+    };
+
+    assert_eq!(fan_speed("Fan 1 speed"), 1505.);
+    assert_eq!(fan_speed("Fan 2 speed"), 1368.);
+    assert_eq!(fan_speed("Fan 3 speed"), 1649.);
+}
+
 fn criterion_benchmark(c: &mut Criterion) {
+    use std::mem::size_of;
+
+    dbg!(size_of::<Response<RawStatus>>(), size_of::<RawStatus>());
+    dbg!(
+        size_of::<Response<KeyTupleStatus>>(),
+        size_of::<KeyTupleStatus>()
+    );
+    dbg!(
+        size_of::<Response<FieldFullStatus>>(),
+        size_of::<FieldFullStatus>()
+    );
+
     {
-        let raw_status_data = r#"{"Device": "NZXT Smart Device (V1)", "Bus": "hid", "Address": "/dev/hidraw3", "Status": [["Fan 1", "PWM", ""], ["Fan 1 current", 0.02, "A"], ["Fan 1 speed", 1505, "rpm"], ["Fan 1 voltage", 11.91, "V"], ["Fan 2", "PWM", ""], ["Fan 2 current", 0.02, "A"], ["Fan 2 speed", 1368, "rpm"], ["Fan 2 voltage", 11.91, "V"], ["Fan 3", "PWM", ""], ["Fan 3 current", 0.03, "A"], ["Fan 3 speed", 1649, "rpm"], ["Fan 3 voltage", 11.91, "V"], ["Firmware version", "1.0.7", ""], ["LED accessories", 2, ""], ["LED accessory type", "HUE+ Strip", ""], ["LED count (total)", 20, ""], ["Noise level", 63, "dB"]]}"#;
+        let raw_status_data = include_str!("../data/mock_liquidctl_raw.json");
 
         c.bench_function("raw_status_baseline", |b| {
             b.iter(|| raw_status_baseline(black_box(raw_status_data)))
@@ -94,12 +143,10 @@ fn criterion_benchmark(c: &mut Criterion) {
         c.bench_function("raw_status_find_fan_rpms", |b| {
             b.iter(|| raw_status_find_fan_rpms(black_box(raw_status_data)))
         });
-
-        dbg!(std::mem::size_of::<Response<RawStatus>>());
     }
 
     {
-        let key_tuple_data = r#"{"Device": "NZXT Smart Device (V1)", "Bus": "hid", "Address": "/dev/hidraw3", "Status": {"Fan 1": ["PWM", ""], "Fan 1 current": [0.03, "A"], "Fan 1 speed": [1532, "rpm"], "Fan 1 voltage": [11.91, "V"], "Fan 2": ["PWM", ""], "Fan 2 current": [0.02, "A"], "Fan 2 speed": [1326, "rpm"], "Fan 2 voltage": [11.91, "V"], "Fan 3": ["PWM", ""], "Fan 3 current": [0.04, "A"], "Fan 3 speed": [1634, "rpm"], "Fan 3 voltage": [11.91, "V"], "Firmware version": ["1.0.7", ""], "LED accessories": [2, ""], "LED accessory type": ["HUE+ Strip", ""], "LED count (total)": [20, ""], "Noise level": [63, "dB"]}}"#;
+        let key_tuple_data = include_str!("../data/mock_liquidctl_key_tuple.json");
 
         c.bench_function("key_tuple_baseline", |b| {
             b.iter(|| key_tuple_baseline(black_box(key_tuple_data)))
@@ -110,8 +157,20 @@ fn criterion_benchmark(c: &mut Criterion) {
         c.bench_function("key_tuple_find_fan_rpms", |b| {
             b.iter(|| key_tuple_find_fan_rpms(black_box(key_tuple_data)))
         });
+    }
 
-        dbg!(std::mem::size_of::<Response<KeyTupleStatus>>());
+    {
+        let field_full = include_str!("../data/mock_liquidctl_field_full.json");
+
+        c.bench_function("field_full_baseline", |b| {
+            b.iter(|| field_full_baseline(black_box(field_full)))
+        });
+        c.bench_function("field_full_filter_rpms", |b| {
+            b.iter(|| field_full_filter_rpms(black_box(field_full)))
+        });
+        c.bench_function("field_full_find_fan_rpms", |b| {
+            b.iter(|| field_full_find_fan_rpms(black_box(field_full)))
+        });
     }
 }
 
