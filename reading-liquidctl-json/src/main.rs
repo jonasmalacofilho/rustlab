@@ -19,7 +19,11 @@ mod lq {
 
     /// liquidctl `--json` status item triple.
     #[derive(Deserialize, Debug)]
-    pub struct Triple(pub String, pub Value, pub String);
+    pub struct Triple {
+        pub key: String,
+        pub value: Value,
+        pub unit: String,
+    }
 
     /// Read a collection of `Status` from `reader`.
     pub fn read_statuses(reader: impl io::Read) -> Result<Vec<Status>> {
@@ -43,13 +47,13 @@ fn sensors<'a>(statuses: &'a [lq::Status]) -> impl Iterator<Item = Sensor<'a>> {
     statuses.iter().flat_map(|dev| {
         dev.status
             .iter()
-            .map(move |lq::Triple(key, value, unit)| Sensor {
+            .map(move |lq| Sensor {
                 bus: &dev.bus,
                 address: &dev.address,
                 description: &dev.description,
-                key,
-                value,
-                unit,
+                key: &lq.key,
+                value: &lq.value,
+                unit: &lq.unit,
             })
     })
 }
