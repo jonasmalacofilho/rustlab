@@ -8,6 +8,7 @@ struct Item<'a> {
     text: &'a str,
     number: f32,
     extra: Value,
+    #[serde(borrow)] // in serde Cow does not automatically borrow
     comments: Cow<'a, str>,
 }
 
@@ -29,7 +30,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // match on Value and modify Cow<&str> (in place)
     for item in data.inner.iter_mut() {
         if let Value::Bool(b) = item.extra {
+            dbg!(matches!(item.comments, Cow::Borrowed(_)));
             *item.comments.to_mut() = format!("extra is bool and equal to {}", b);
+            dbg!(matches!(item.comments, Cow::Borrowed(_)));
         }
     }
 
