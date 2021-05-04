@@ -6,3 +6,4 @@ edition = "2018"
 
 [dependencies]
 hidapi = { version = "1.2", default-features = false, features = ["linux-static-hidraw"] }
+faster-hex = "0.5"
