@@ -16,3 +16,7 @@ harness = false
 [[bench]]
 name = "json_from_liquidctl"
 harness = false
+
+[[bench]]
+name = "jit_functions"
+harness = false
