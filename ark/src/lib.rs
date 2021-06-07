@@ -113,6 +113,10 @@ unsafe impl<T: Send + Sync + ?Sized> Send for Ark<T> {}
 // Ark<T> can be used inside another Ark
 unsafe impl<T: Send + Sync + ?Sized> Sync for Ark<T> {}
 
+// FIXME (copied from Arc without much thought)
+unsafe impl<T: Send + Sync + ?Sized> Send for ArkInner<T> {}
+unsafe impl<T: Send + Sync + ?Sized> Sync for ArkInner<T> {}
+
 #[cfg(feature = "nightly")]
 impl<T: ?Sized + Unsize<U>, U: ?Sized> CoerceUnsized<Ark<U>> for Ark<T> {}
 
