@@ -13,7 +13,7 @@ use std::{marker::Unsize, ops::CoerceUnsized};
 
 pub struct Ark<T: ?Sized> {
     // Use the fact that the pointer is never null for a niche; this also makes Ark covariant over
-    // ArkInner<T>, but that is also accomplished by `_phantom` bellow.
+    // ArkInner<T>, which is not accomplished by `_phantom` bellow (FIXME why?!).
     ptr: NonNull<ArkInner<T>>,
 
     // Tell the compiler that even though we do not access T when *we* drop, we still drop
@@ -56,7 +56,7 @@ impl<T: ?Sized> Ark<T> {
 }
 
 impl<T: ?Sized> Clone for Ark<T> {
-    fn clone(&self) -> Self {
+    fn clone(&self) -> Ark<T> {
         // Ordering: there are no access to synchronize in this function and the inner struct is
         // not going anywhere because the &self reference implies that strong_count >= 1.
         self.inner().strong_count.fetch_add(1, Ordering::Relaxed);
