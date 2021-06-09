@@ -143,6 +143,15 @@ mod tests {
     }
 
     #[test]
+    fn allows_ark_of_option_to_use_niche() {
+        use std::mem::size_of;
+
+        // Because we ensure the compiler that the pointer is never null, it can use that as a
+        // niche to optimize the layout of things like Option<Ark<T>>.
+        assert_eq!(size_of::<Ark<&str>>(), size_of::<Ark<Option<&str>>>());
+    }
+
+    #[test]
     fn is_covariant_over_the_type_parameter<'a>() {
         let s: Ark<&'static str> = Ark::new("hi");
 
