@@ -22,6 +22,7 @@ pub struct Ark<T: ?Sized> {
     _phantom: PhantomData<ArkInner<T>>,
 }
 
+#[repr(C)]
 struct ArkInner<T: ?Sized> {
     strong_count: AtomicUsize,
     data: T,
