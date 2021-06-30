@@ -30,8 +30,8 @@ fn gen_digits(num: usize) -> Vec<u8> {
 
 fn gen_silly_digits(num: usize) -> Vec<u8> {
     assert!(
-        num <= 8,
-        "mathematically impossible to generate more than 8 silly digits"
+        num <= 9,
+        "cannot reliably generate more than 9 SILLY digits"
     );
 
     let mut digits: Vec<u8> = Vec::with_capacity(num);
